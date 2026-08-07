@@ -1,5 +1,3 @@
-# Mail-IQ
-AI-powered email intelligence SaaS that monitors Gmail and Outlook, classifies incoming emails, and delivers structured insights across WhatsApp, Telegram, Slack, and Discord.
 
 # MailIQ
 
