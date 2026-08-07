@@ -6,7 +6,7 @@ This section documents the system architecture behind MailIQ, including the majo
 
 MailIQ is a multi-tenant AI email intelligence SaaS platform.
 
-At a high level, the system:
+The architecture is designed around an event-driven processing pipeline that:
 
 1. Authenticates a customer and connects their Gmail or Outlook account.
 2. Receives and processes incoming email events.
@@ -17,6 +17,7 @@ At a high level, the system:
 7. Delivers the resulting intelligence through the customer's configured communication channels.
 8. Records relevant execution, subscription, and operational data for monitoring and recovery.
 
+The repository documents the architecture, integration boundaries, workflow design, security model, deployment approach, testing strategy, and operational model behind this system. Implementation evidence is being progressively added as the platform is rebuilt.
 ## Major System Components
 
 | Component | Responsibility |
