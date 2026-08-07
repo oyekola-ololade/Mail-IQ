@@ -236,19 +236,18 @@ Operational visibility is provided through:
 
 ## Technology Stack
 
-| Layer                  | Technology                            |
-| ---------------------- | ------------------------------------- |
-| Workflow orchestration | n8n                                   |
-| AI / LLM               | OpenAI, Groq AI / Llama 3.3 70B       |
-| Database               | PostgreSQL                            |
-| Authentication         | OAuth 2.0 / JWT                       |
-| Email providers        | Gmail API / Microsoft Graph API       |
-| Messaging              | WhatsApp / Telegram / Slack / Discord |
-| Billing                | Paystack                              |
-| Containers             | Docker                                |
-| Infrastructure         | Railway                               |
-| Frontend               | Netlify / Vercel                      |
-
+| Layer | Technology |
+|---|---|
+| Workflow orchestration | n8n |
+| AI / LLM | OpenAI, Groq AI / Llama 3.3 70B |
+| Database | PostgreSQL |
+| Authentication | OAuth 2.0 / JWT |
+| Email providers | Gmail API / Microsoft Graph API |
+| Messaging | WhatsApp / Telegram / Slack / Discord |
+| Billing | Paystack |
+| Containers | Docker |
+| Infrastructure | Railway |
+| Frontend | Netlify / Vercel |
 ---
 
 ## Project Status
