@@ -263,20 +263,16 @@ This repository is being organised as the engineering source of truth for the sy
 
 ## Repository Documentation
 
-Detailed engineering documentation will be organised under:
+The repository documents the system across its major engineering layers:
 
-    docs/
-    ├── architecture/
-    ├── database/
-    ├── workflows/
-    ├── security/
-    ├── integrations/
-    └── deployment/
-
-The README provides the system-level overview.
-
-The documentation provides the deeper engineering detail.
-
+- [Architecture](docs/architecture.md) — System architecture and major components
+- [Database](docs/database.md) — Data model and persistence architecture
+- [Security](docs/security.md) — Authentication, authorisation, credentials, and security considerations
+- [Integrations](docs/integrations.md) — External service integrations and provider architecture
+- [Deployment](docs/deployment.md) — Production infrastructure and deployment architecture
+- [API & Events](docs/api-and-events.md) — API communication, webhooks, event flows, and integrations
+- [Testing & QA](docs/testing.md) — Testing strategy, workflow validation, and regression coverage
+- [Operations](docs/operations.md) — Monitoring, reliability, failure handling, and operational procedures
 ---
 
 ## Key Engineering Decisions
