@@ -234,30 +234,30 @@ Operational visibility is provided through:
 
 ---
 
-## Technology
+## Technology Stack
 
-| Layer | Technology |
-|---|---|
-| Workflow orchestration | n8n |
-| AI | Groq AI / Llama 3.3 70B |
-| Database | PostgreSQL |
-| Authentication | OAuth 2.0 / JWT |
-| Email providers | Gmail API / Microsoft Graph API |
-| Messaging | WhatsApp / Telegram / Slack / Discord |
-| Billing | Paystack |
-| Containers | Docker |
-| Infrastructure | Railway |
-| Frontend | Netlify / Vercel |
+| Layer                  | Technology                            |
+| ---------------------- | ------------------------------------- |
+| Workflow orchestration | n8n                                   |
+| AI / LLM               | OpenAI, Groq AI / Llama 3.3 70B       |
+| Database               | PostgreSQL                            |
+| Authentication         | OAuth 2.0 / JWT                       |
+| Email providers        | Gmail API / Microsoft Graph API       |
+| Messaging              | WhatsApp / Telegram / Slack / Discord |
+| Billing                | Paystack                              |
+| Containers             | Docker                                |
+| Infrastructure         | Railway                               |
+| Frontend               | Netlify / Vercel                      |
 
 ---
 
 ## Project Status
 
-**Production System**
+### Production System
 
-MailIQ has been designed and implemented as a functional SaaS platform.
+MailIQ is an existing functional SaaS system whose architecture, workflows, infrastructure, and engineering decisions are being reconstructed into this repository as the project is rebuilt and documented.
 
-This repository is being organised as the engineering source of truth for the system, documenting its architecture, workflows, infrastructure, security decisions, and implementation as the project evolves.
+This repository is being organised as the engineering source of truth for the system. Implementation evidence will be progressively added alongside the architectural documentation as the rebuild continues.
 
 ---
 
