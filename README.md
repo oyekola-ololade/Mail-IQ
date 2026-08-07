@@ -1,68 +1,47 @@
-
 # MailIQ
 
-> AI-powered email intelligence SaaS that turns incoming email into structured, actionable intelligence and delivers it through the channels teams already use.
+> AI-powered email intelligence SaaS that turns incoming Gmail and Outlook email into structured, actionable intelligence and delivers it through the communication channels teams already use.
+
+[![Status](https://img.shields.io/badge/Status-Production_System-18181B?style=flat-square)](#project-status)
+[![Architecture](https://img.shields.io/badge/Architecture-Multi--Tenant-18181B?style=flat-square)](#architecture)
+[![n8n](https://img.shields.io/badge/Orchestration-n8n-18181B?style=flat-square)](#technology)
+
+---
 
 ## Overview
 
-MailIQ connects to Gmail and Outlook, monitors incoming email, processes messages through AI, and delivers structured intelligence to the user's preferred communication platform.
+MailIQ is a multi-tenant AI email intelligence platform designed to continuously monitor connected Gmail and Outlook accounts, analyse incoming messages, and deliver structured intelligence through WhatsApp, Telegram, Slack, or Discord.
 
-The system is designed as a multi-tenant SaaS platform with automated customer onboarding, personalised AI agent provisioning, email classification, urgency scoring, conversation memory, subscription management, and fault-tolerant workflow orchestration.
+Rather than simply summarising email, MailIQ processes each message through a structured AI pipeline that determines its category, urgency, important details, deadlines, and recommended action.
 
-## Core Capabilities
+The platform also provisions personalised AI workflows for customers automatically, allowing new accounts to be onboarded without manually creating or configuring workflows for each customer.
 
-- Real-time Gmail and Outlook email processing
-- AI-powered email classification
-- 1–10 urgency scoring
-- Structured email summaries and action recommendations
-- Personalised AI agent provisioning
-- WhatsApp, Telegram, Slack, and Discord delivery
-- Google and Microsoft OAuth 2.0
-- Subscription billing and trial management
-- Short-term and long-term conversation memory
-- Automated retry and failure handling
-- Multi-tenant architecture
-- Administrative monitoring and alerts
+---
 
-## Architecture
+## What MailIQ Does
 
-MailIQ uses a workflow-driven architecture combining AI services, APIs, databases, authentication, billing, and messaging infrastructure.
-
-The system is designed around reusable workflow templates and isolated customer execution contexts, allowing personalised agents to be provisioned without maintaining a separate workflow architecture for every customer.
-
-Detailed architecture documentation is available in [`docs/`](./docs/).
-
-## Technology
-
-- Python
-- n8n
-- Groq AI
-- PostgreSQL
-- Docker
-- Railway
-- Gmail API
-- Microsoft Graph API
-- WhatsApp
-- Telegram
-- Slack
-- Discord
-- Paystack
-- OAuth 2.0
-
-## Project Status
-
-**Production System**
-
-MailIQ has been designed and implemented as a functional SaaS platform. This repository documents its architecture, engineering decisions, workflows, infrastructure, and implementation.
-
-## Documentation
-
-Documentation will be added progressively as the system architecture and implementation are organised within this repository.
-
-## Author
-
-**Ololade Oyekola**
-
-AI Systems Engineer
-
-[LinkedIn](https://www.linkedin.com/in/ololade-oyekola-5b1797397/) · [GitHub](https://github.com/oyekola-ololade)
+```text
+Gmail / Outlook
+       │
+       ▼
+ Email Ingestion
+       │
+       ▼
+ AI Processing
+       │
+       ├── Classification
+       ├── Urgency Scoring
+       ├── Key Detail Extraction
+       ├── Deadline Detection
+       └── Action Recommendation
+       │
+       ▼
+ Structured Result
+       │
+       ▼
+ Personalised Delivery
+       │
+       ├── WhatsApp
+       ├── Telegram
+       ├── Slack
+       └── Discord
