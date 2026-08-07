@@ -61,17 +61,14 @@ AI processing is constrained around structured outputs so downstream workflows c
 
 ## Detailed Documentation
 
-The architecture documentation will be expanded into dedicated sections covering:
+The repository contains dedicated documentation for each major engineering area:
 
-- System architecture
-- Workflow architecture
-- Multi-tenant execution
-- AI processing pipeline
-- Authentication and OAuth
-- Database architecture
-- Messaging integrations
-- Billing architecture
-- Error handling and recovery
-- Security architecture
-- Infrastructure and deployment
-- Monitoring and observability
+- [System Architecture](system-architecture.md) — Overall MailIQ system structure and component relationships
+- [Workflow Architecture](workflow-architecture.md) — Automation workflows, orchestration, and processing logic
+- [Database Architecture](../database.md) — Persistent data and storage architecture
+- [Security Architecture](../security.md) — Authentication, credentials, access control, and security considerations
+- [Integrations Architecture](../integrations.md) — External providers and service integrations
+- [Deployment & Infrastructure](../deployment.md) — Production hosting, containers, and infrastructure
+- [API & Event Architecture](../api-and-events.md) — APIs, webhooks, event flows, and communication boundaries
+- [Testing & QA](../testing.md) — Testing strategy and workflow validation
+- [Operations & Reliability](../operations.md) — Monitoring, failure handling, retries, and operational procedures
