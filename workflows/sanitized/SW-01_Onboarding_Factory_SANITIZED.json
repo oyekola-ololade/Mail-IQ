@@ -1,0 +1,990 @@
+{
+  "name": "SW-01 Example Onboarding Factory",
+  "nodes": [
+    {
+      "id": "37650aee-06d4-4e17-91b4-e5e584a48af7",
+      "name": "Webhook Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        400
+      ],
+      "webhookId": "example-onboarding-factory",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "example-onboarding-factory",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "67f76d20-66c0-4404-927e-ae8e6df60a77",
+      "name": "Validate Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        400
+      ],
+      "parameters": {
+        "jsCode": "const body = $input.first().json;\n\nconst required = ['name', 'phone', 'email', 'provider', 'platform', 'tier', 'oauth_code', 'session_id'];\nconst missing = required.filter(f => !body[f] || body[f].toString().trim() === '');\n\nif (missing.length > 0) {\n  return [{\n    json: {\n      valid: false,\n      error: `Missing required fields: ${missing.join(', ')}`,\n      received: body\n    }\n  }];\n}\n\n// Normalize provider\nconst provider = body.provider.toLowerCase();\nconst validProviders = ['gmail', 'outlook'];\nif (!validProviders.includes(provider)) {\n  return [{\n    json: {\n      valid: false,\n      error: `Invalid provider: ${provider}. Must be gmail or outlook.`,\n      received: body\n    }\n  }];\n}\n\n// Normalize platform\nconst platform = body.platform.toLowerCase();\nconst validPlatforms = ['whatsapp', 'telegram', 'slack', 'discord'];\nif (!validPlatforms.includes(platform)) {\n  return [{\n    json: {\n      valid: false,\n      error: `Invalid platform: ${platform}`,\n      received: body\n    }\n  }];\n}\n\n// Normalize tier\nconst tier = body.tier.toLowerCase();\nconst validTiers = ['basic', 'standard', 'premium', 'business'];\nif (!validTiers.includes(tier)) {\n  return [{\n    json: {\n      valid: false,\n      error: `Invalid tier: ${tier}`,\n      received: body\n    }\n  }];\n}\n\nreturn [{\n  json: {\n    valid: true,\n    name: body.name.trim(),\n    phone: body.phone.trim(),\n    email: body.email.trim().toLowerCase(),\n    provider: provider,\n    platform: platform,\n    tier: tier,\n    oauth_code: body.oauth_code,\n    session_id: body.session_id,\n    destination_type: body.destination_type || 'personal',\n    platform_config: body.platform_config || {},\n    categories: body.categories || ['All'],\n    urgency_threshold: body.urgency_threshold || 3,\n    timezone: body.timezone || 'Africa/Lagos',\n    quiet_hours_start: body.quiet_hours_start || null,\n    quiet_hours_end: body.quiet_hours_end || null\n  }\n}];"
+      }
+    },
+    {
+      "id": "e40d8a0b-d278-460a-aafe-2fec3b6e18f1",
+      "name": "Phone Verified?",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        750,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT verified, attempts, locked_until FROM verification_records WHERE phone = '{{ $node['Validate Payload'].json.phone }}' AND session_id = '{{ $node['Validate Payload'].json.session_id }}' ORDER BY created_at DESC LIMIT 1"
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "9048dfef-2c27-44dd-a7d1-ddf081e2e0e2",
+      "name": "Verified?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "type": "boolean"
+          },
+          "conditions": [
+            {
+              "id": "b569de48-a87b-42ae-8e46-e85967da28b3",
+              "leftValue": "={{ $json.length > 0 && $json[0].verified === true && (!$json[0].locked_until || new Date($json[0].locked_until) < new Date()) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "20de990f-ec05-447d-b81b-a5f4f273ab18",
+      "name": "Respond 403 Not Verified",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        600
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 403
+        },
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ error: 'Phone not verified or session locked', code: 'PHONE_VERIFICATION_REQUIRED' }) }}"
+      }
+    },
+    {
+      "id": "ef9a1b30-4c03-4366-91c9-d315cb00b088",
+      "name": "Create Client",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO accounts (name, phone, email, tier, provider, platform, destination_type, status, is_active, created_at) VALUES ('{{ $node['Validate Payload'].json.name }}', '{{ $node['Validate Payload'].json.phone }}', '{{ $node['Validate Payload'].json.email }}', '{{ $node['Validate Payload'].json.tier }}', '{{ $node['Validate Payload'].json.provider }}', '{{ $node['Validate Payload'].json.platform }}', '{{ $node['Validate Payload'].json.destination_type }}', 'onboarding', false, NOW()) RETURNING id"
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "c00478dc-69c0-4d3e-a049-2c258589789f",
+      "name": "Exchange OAuth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1500,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['Validate Payload'].json.provider === 'gmail' ? 'https://oauth2.googleapis.com/token' : 'https://login.microsoftonline.com/common/oauth2/v2.0/token' }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "grant_type",
+              "value": "authorization_code"
+            },
+            {
+              "name": "code",
+              "value": "={{ $node['Validate Payload'].json.oauth_code }}"
+            },
+            {
+              "name": "client_id",
+              "value": "={{ $node['Validate Payload'].json.provider === 'gmail' ? $credentials.googleOAuth2Api.clientId : $credentials.microsoftOutlookOAuth2Api.clientId }}"
+            },
+            {
+              "name": "client_secret",
+              "value": "={{ $node['Validate Payload'].json.provider === 'gmail' ? $credentials.googleOAuth2Api.clientSecret : $credentials.microsoftOutlookOAuth2Api.clientSecret }}"
+            },
+            {
+              "name": "redirect_uri",
+              "value": "={{ $node['Validate Payload'].json.provider === 'gmail' ? 'https://app.ExampleSystem.online/auth/gmail/callback' : 'https://app.ExampleSystem.online/auth/outlook/callback' }}"
+            },
+            {
+              "name": "scope",
+              "value": "={{ $node['Validate Payload'].json.provider === 'outlook' ? 'https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read offline_access' : '' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-googleOAuth2Api-Credential"
+        },
+        "microsoftOutlookOAuth2Api": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-microsoftOutlookOAuth2Api-Credential"
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "4cd5bebc-723f-4b60-959a-536910b6456d",
+      "name": "OAuth Success?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1750,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "type": "boolean"
+          },
+          "conditions": [
+            {
+              "id": "3811b711-04b6-4326-be4a-1509c1592a12",
+              "leftValue": "={{ $json.access_token !== undefined }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "96fb4825-77af-4865-a0a5-4892edc4f142",
+      "name": "Log OAuth Failure",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1750,
+        600
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO workflow_failures (client_id, node_name, error_message, payload, status, created_at) VALUES ('{{ $node['Create Client'].json[0].id }}', 'Exchange OAuth', '{{ $json.error_description || $json.error || JSON.stringify($json) }}', '{{ JSON.stringify($json) }}'::jsonb, 'pending', NOW())"
+      }
+    },
+    {
+      "id": "93dd8911-0933-4a37-85c9-5d2817f049e0",
+      "name": "Alert Admin (OAuth Fail)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1750,
+        800
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.example.com/webhook/admin-alerts",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "workflow_failure"
+            },
+            {
+              "name": "client_id",
+              "value": "={{ $node['Create Client'].json[0].id }}"
+            },
+            {
+              "name": "workflow_id",
+              "value": "onboarding-factory"
+            },
+            {
+              "name": "error",
+              "value": "OAuth exchange failed: {{ $json.error || 'Unknown error' }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      }
+    },
+    {
+      "id": "2195c1ac-d2ca-4f5a-bd44-f654fdd04d1f",
+      "name": "Store Credentials (n8n API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2000,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.example.com/api/credentials",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "name": "={{ 'ExampleSystem-' + $node['Validate Payload'].json.provider + '-' + $node['Create Client'].json[0].id + '-' + $node['Validate Payload'].json.platform }}",
+          "type": "={{ $node['Validate Payload'].json.provider === 'gmail' ? 'googleOAuth2Api' : 'microsoftOutlookOAuth2Api' }}",
+          "data": {
+            "accessToken": "={{ $json.access_token }}",
+            "refreshToken": "={{ $json.refresh_token }}",
+            "expiresAt": "={{ Date.now() + ($json.expires_in * 1000) }}"
+          }
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "n8nApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-n8nApi-Credential"
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "14724fc8-df7e-4b54-b959-5e844dda83f4",
+      "name": "Capture credentialId",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        2250,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d78f3607-db92-4456-bb70-31f92f088f14",
+              "name": "credential_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "1e04fc57-7f80-409e-a995-b52d58652554",
+              "name": "client_id",
+              "value": "={{ $node['Create Client'].json[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "632b159b-50a6-4b71-bf7a-a59e9c4d0f31",
+      "name": "Update Client (credentialId)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        2500,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE accounts SET integration_credential_id = '{{ $node['Capture credentialId'].json.integration_credential_id }}', updated_at = NOW() WHERE id = '{{ $node['Capture credentialId'].json.client_id }}'"
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "411ae623-1eae-44d2-b7aa-30814016776c",
+      "name": "Is Premium+?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        2750,
+        400
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "type": "boolean"
+          },
+          "conditions": [
+            {
+              "id": "72137dc3-5e07-4149-8b58-8fd5c7683149",
+              "leftValue": "={{ ['premium', 'business'].includes($node['Validate Payload'].json.tier) }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e7cbd729-5205-4d6e-8130-259d8514c187",
+      "name": "Register Push",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        2750,
+        600
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $node['Validate Payload'].json.provider === 'gmail' ? 'https://gmail.googleapis.com/gmail/v1/users/me/watch' : 'https://graph.microsoft.com/v1.0/subscriptions' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "topicName": "={{ $node['Validate Payload'].json.provider === 'gmail' ? 'projects/ExampleSystem/topics/gmail-push' : undefined }}",
+          "labelIds": [
+            "INBOX"
+          ],
+          "changeType": "created,updated",
+          "notificationUrl": "={{ 'https://app.ExampleSystem.online/webhook/' + $node['Validate Payload'].json.provider + '-push' }}",
+          "resource": "me/messages",
+          "expirationDateTime": "={{ new Date(Date.now() + 86400000 * 3).toISOString() }}"
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "googleOAuth2Api": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-googleOAuth2Api-Credential"
+        },
+        "microsoftOutlookOAuth2Api": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-microsoftOutlookOAuth2Api-Credential"
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "3f7b3a27-052b-4d81-947d-879eb3fac4f7",
+      "name": "Generate Child Workflow JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3000,
+        400
+      ],
+      "parameters": {
+        "jsCode": "// ============================================================\n// This node loads a template JSON and injects client-specific values\n// In production, load template from file/DB instead of inline\n// ============================================================\n\nconst clientId = $node['Capture credentialId'].json.client_id;\nconst credentialId = $node['Capture credentialId'].json.credential_id;\nconst provider = $node['Validate Payload'].json.provider;\nconst platform = $node['Validate Payload'].json.platform;\nconst tier = $node['Validate Payload'].json.tier;\nconst destinationType = $node['Validate Payload'].json.destination_type;\n\n// Determine polling interval based on tier\nconst pollingInterval = tier === 'basic' ? 3 : 1; // minutes\n\n// Determine trigger type\nconst isPremium = ['premium', 'business'].includes(tier);\n\n// Build template lookup key\nconst templateKey = `${provider}-${platform}-${destinationType}`;\n\n// For now, return the injection parameters\n// The actual template JSON would be loaded from MinIO/DB\nreturn [{\n  json: {\n    client_id: clientId,\n    credential_id: credentialId,\n    provider: provider,\n    platform: platform,\n    tier: tier,\n    polling_interval: pollingInterval,\n    trigger_type: isPremium ? 'webhook' : 'schedule',\n    template_key: templateKey,\n    workflow_name: `example-child-${clientId}`,\n    tags: ['child-workflow', provider, platform, tier],\n    // These would be injected into the template JSON\n    inject: {\n      client_id: clientId,\n      credential_id: credentialId,\n      platform_config: $node['Validate Payload'].json.platform_config,\n      polling_interval: pollingInterval,\n      quiet_hours_start: $node['Validate Payload'].json.quiet_hours_start,\n      quiet_hours_end: $node['Validate Payload'].json.quiet_hours_end,\n      timezone: $node['Validate Payload'].json.timezone,\n      categories: $node['Validate Payload'].json.categories,\n      urgency_threshold: $node['Validate Payload'].json.urgency_threshold\n    }\n  }\n}];"
+      }
+    },
+    {
+      "id": "b22a048f-9ac0-4484-a279-abb19e304728",
+      "name": "Create Workflow (n8n API)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3250,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.example.com/api/workflows",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "name": "={{ $json.workflow_name }}",
+          "nodes": [],
+          "connections": {},
+          "settings": {
+            "executionOrder": "v1",
+            "saveExecutionProgress": true,
+            "timezone": "Africa/Lagos"
+          },
+          "tags": "={{ $json.tags }}"
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "n8nApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-n8nApi-Credential"
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "3f82df13-9678-484b-a873-19a4a0b1c103",
+      "name": "Capture workflowId",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        3500,
+        400
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b8daebb8-300b-45a5-a9dc-c33c0e1c5155",
+              "name": "workflow_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            },
+            {
+              "id": "1a0d8099-4a12-468a-b7a5-39a7068a3b0a",
+              "name": "client_id",
+              "value": "={{ $node['Capture credentialId'].json.client_id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f84c72b3-bbbb-454e-89fa-f7da42cfc235",
+      "name": "Activate Workflow",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        3750,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ 'https://internal.example.com/api/workflows/' + $node['Capture workflowId'].json.workflow_id + '/activate' }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "credentials": {
+        "n8nApi": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-n8nApi-Credential"
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "f851e823-c3e0-4745-87b2-59c3efcecf27",
+      "name": "Update Client (workflowId + active)",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        4000,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE accounts SET automation_id = '{{ $node['Capture workflowId'].json.automation_id }}', is_active = true, status = 'active', updated_at = NOW() WHERE id = '{{ $node['Capture workflowId'].json.client_id }}'"
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "b96d5d3e-4ec0-47d2-a596-569f96182f93",
+      "name": "Create Subscription",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        4250,
+        400
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "REDACTED_CREDENTIAL_ID",
+          "name": "ExampleSystem-postgres-Credential"
+        }
+      },
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO subscriptions (client_id, plan, status, gateway, created_at) VALUES ('{{ $node['Capture workflowId'].json.client_id }}', '{{ $node['Validate Payload'].json.tier }}', 'trialing', 'paystack', NOW()) RETURNING id"
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "39500b8a-5f88-468c-9e6f-438283344c08",
+      "name": "Send Welcome",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4500,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.example.com/webhook/send-platform-message",
+        "sendBody": true,
+        "contentType": "json",
+        "body": {
+          "client_id": "={{ $node['Capture workflowId'].json.client_id }}",
+          "platform": "={{ $node['Validate Payload'].json.platform }}",
+          "message": "Welcome! Your email monitoring is now active. Reply with 'help' for commands."
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "5b7792b6-3445-4a63-bcdd-4dc607d5f337",
+      "name": "Alert Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        4750,
+        400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://internal.example.com/webhook/admin-alerts",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "type",
+              "value": "new_signup"
+            },
+            {
+              "name": "client_id",
+              "value": "={{ $node['Capture workflowId'].json.client_id }}"
+            },
+            {
+              "name": "tier",
+              "value": "={{ $node['Validate Payload'].json.tier }}"
+            },
+            {
+              "name": "platform",
+              "value": "={{ $node['Validate Payload'].json.platform }}"
+            },
+            {
+              "name": "provider",
+              "value": "={{ $node['Validate Payload'].json.provider }}"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "retry": {
+        "maxTries": 3,
+        "waitBetween": 2000,
+        "type": "exponentialBackoff"
+      }
+    },
+    {
+      "id": "31c91f56-746b-4c9c-b8b4-58f5d7f9e457",
+      "name": "Respond 201 Created",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        5000,
+        400
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 201
+        },
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ client_id: $node['Capture workflowId'].json.client_id, workflow_id: $node['Capture workflowId'].json.workflow_id, status: 'active', tier: $node['Validate Payload'].json.tier }) }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Trigger": {
+      "main": [
+        [
+          {
+            "node": "Validate Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Payload": {
+      "main": [
+        [
+          {
+            "node": "Phone Verified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Phone Verified?": {
+      "main": [
+        [
+          {
+            "node": "Verified?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verified?": {
+      "main": [
+        [
+          {
+            "node": "Create Client",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 403 Not Verified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Client": {
+      "main": [
+        [
+          {
+            "node": "Exchange OAuth",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Exchange OAuth": {
+      "main": [
+        [
+          {
+            "node": "OAuth Success?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OAuth Success?": {
+      "main": [
+        [
+          {
+            "node": "Store Credentials (n8n API)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log OAuth Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log OAuth Failure": {
+      "main": [
+        [
+          {
+            "node": "Alert Admin (OAuth Fail)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Credentials (n8n API)": {
+      "main": [
+        [
+          {
+            "node": "Capture credentialId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture credentialId": {
+      "main": [
+        [
+          {
+            "node": "Update Client (credentialId)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client (credentialId)": {
+      "main": [
+        [
+          {
+            "node": "Is Premium+?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Premium+?": {
+      "main": [
+        [
+          {
+            "node": "Generate Child Workflow JSON",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Register Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Register Push": {
+      "main": [
+        [
+          {
+            "node": "Generate Child Workflow JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Child Workflow JSON": {
+      "main": [
+        [
+          {
+            "node": "Create Workflow (n8n API)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Workflow (n8n API)": {
+      "main": [
+        [
+          {
+            "node": "Capture workflowId",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Capture workflowId": {
+      "main": [
+        [
+          {
+            "node": "Activate Workflow",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Activate Workflow": {
+      "main": [
+        [
+          {
+            "node": "Update Client (workflowId + active)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client (workflowId + active)": {
+      "main": [
+        [
+          {
+            "node": "Create Subscription",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Subscription": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome": {
+      "main": [
+        [
+          {
+            "node": "Alert Admin",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Admin": {
+      "main": [
+        [
+          {
+            "node": "Respond 201 Created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "timezone": "Africa/Lagos",
+    "errorWorkflow": ""
+  },
+  "staticData": null,
+  "tags": [
+    {
+      "id": "REDACTED_TAG_ID",
+      "name": "system-workflow",
+      "createdAt": "2026-07-16T00:00:00.000Z",
+      "updatedAt": "2026-07-16T00:00:00.000Z"
+    },
+    {
+      "id": "REDACTED_TAG_ID",
+      "name": "critical-path",
+      "createdAt": "2026-07-16T00:00:00.000Z",
+      "updatedAt": "2026-07-16T00:00:00.000Z"
+    },
+    {
+      "id": "REDACTED_TAG_ID",
+      "name": "onboarding",
+      "createdAt": "2026-07-16T00:00:00.000Z",
+      "updatedAt": "2026-07-16T00:00:00.000Z"
+    }
+  ],
+  "_sanitization_note": "Sanitized copy for methodology testing. Product identifiers, domains, credential IDs/names, internal endpoints, and database naming were generalized. Workflow structure and decision logic were retained where possible."
+}

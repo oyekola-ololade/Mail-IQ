@@ -1,0 +1,26 @@
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*.json
+secrets*.json
+
+# n8n runtime/export noise
+.n8n/
+executions/
+*.sqlite
+*.sqlite3
+
+# Node tooling
+node_modules/
+dist/
+coverage/
+*.log
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

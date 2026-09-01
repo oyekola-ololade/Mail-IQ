@@ -1,0 +1,2297 @@
+{
+  "name": "MailIQ",
+  "nodes": [
+    {
+      "id": "p1-001",
+      "name": "EveryMinute",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "p1-002",
+      "name": "CheckTokenCache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const cache = $workflow.staticData;\nconst now = Date.now();\nconst fiveMin = 5 * 60 * 1000;\n\nif (cache.accessToken && cache.expiresAt && (cache.expiresAt - now) > fiveMin) {\n  return [{ json: { accessToken: cache.accessToken, fromCache: true } }];\n}\nreturn [{ json: { needsRefresh: true, fromCache: false } }];"
+      }
+    },
+    {
+      "id": "p1-003",
+      "name": "NeedsRefresh",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "a1",
+              "leftValue": "={{ $json.fromCache }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-004",
+      "name": "RefreshOAuth",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        180
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://oauth2.googleapis.com/token",
+        "sendBody": true,
+        "contentType": "form",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "client_id",
+              "value": "YOUR_GOOGLE_CLIENT_ID"
+            },
+            {
+              "name": "client_secret",
+              "value": "YOUR_GOOGLE_CLIENT_SECRET"
+            },
+            {
+              "name": "refresh_token",
+              "value": "YOUR_GOOGLE_REFRESH_TOKEN"
+            },
+            {
+              "name": "grant_type",
+              "value": "refresh_token"
+            }
+          ]
+        },
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p1-005",
+      "name": "NotifyDisconnect",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        60
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={ \"number\": \"YOUR_WHATSAPP_NUMBER\", \"text\": \"⚠️ MailIQ: Your Gmail connection has expired. Please reconnect at YOUR_APP_URL to resume email monitoring.\" }"
+      }
+    },
+    {
+      "id": "p1-006",
+      "name": "SaveTokenCache",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        180
+      ],
+      "parameters": {
+        "jsCode": "const token = $input.first().json;\n$workflow.staticData.accessToken = token.access_token;\n$workflow.staticData.expiresAt = Date.now() + (token.expires_in * 1000);\nreturn [{ json: { accessToken: token.access_token, fromCache: false } }];"
+      }
+    },
+    {
+      "id": "p1-007",
+      "name": "MergeToken",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        1200,
+        300
+      ],
+      "parameters": {
+        "mode": "chooseBranch",
+        "chooseBranchMode": "waitForAll",
+        "output": "preferBranch",
+        "preferBranch": "branch0"
+      }
+    },
+    {
+      "id": "p1-008",
+      "name": "GetUserSettings_P1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1440,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/user_settings",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p1-009",
+      "name": "IsActive_P1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "b1",
+              "leftValue": "={{ $json.is_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-010",
+      "name": "FetchEmails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('MergeToken').first().json.accessToken }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "=is:unread after:{{ Math.floor(new Date($('GetUserSettings_P1').first().json.last_checked_at).getTime()/1000) }}"
+            },
+            {
+              "name": "maxResults",
+              "value": "50"
+            }
+          ]
+        },
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p1-011",
+      "name": "HasNewEmails",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2160,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.resultSizeEstimate }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-012",
+      "name": "SplitEmails",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        300
+      ],
+      "parameters": {
+        "fieldToSplitOut": "messages"
+      }
+    },
+    {
+      "id": "p1-013",
+      "name": "GetEmailDetail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://gmail.googleapis.com/gmail/v1/users/me/messages/{{ $json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $('MergeToken').first().json.accessToken }}"
+            }
+          ]
+        },
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "format",
+              "value": "full"
+            }
+          ]
+        },
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p1-014",
+      "name": "DecodeEmail",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const msg = $input.first().json;\nconst headers = msg.payload.headers;\nconst get = (name) => headers.find(h => h.name.toLowerCase() === name.toLowerCase())?.value || '';\n\nfunction decodePart(part) {\n  if (!part) return '';\n  if (part.mimeType === 'text/plain' && part.body?.data) {\n    return Buffer.from(part.body.data, 'base64').toString('utf-8');\n  }\n  if (part.mimeType === 'text/html' && part.body?.data) {\n    let html = Buffer.from(part.body.data, 'base64').toString('utf-8');\n    return html.replace(/<style[^>]*>[\\s\\S]*?<\\/style>/gi, '')\n               .replace(/<script[^>]*>[\\s\\S]*?<\\/script>/gi, '')\n               .replace(/<[^>]+>/g, ' ')\n               .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')\n               .replace(/\\s+/g, ' ').trim();\n  }\n  if (part.parts) {\n    const plain = part.parts.find(p => p.mimeType === 'text/plain');\n    if (plain) return decodePart(plain);\n    return decodePart(part.parts[0]);\n  }\n  return '';\n}\n\nconst body = decodePart(msg.payload).slice(0, 2000);\n\nreturn [{\n  json: {\n    message_id: msg.id,\n    thread_id: msg.threadId,\n    sender: get('From'),\n    subject: get('Subject'),\n    date: get('Date'),\n    body,\n    user_id: 'YOUR_USER_ID'\n  }\n}];"
+      }
+    },
+    {
+      "id": "p1-015",
+      "name": "CheckDuplicate",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/email_log",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "message_id",
+              "value": "={{ $json.message_id }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p1-016",
+      "name": "IsDuplicate",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "d1",
+              "leftValue": "={{ $json.length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-017",
+      "name": "AIAgent_P1",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        3600,
+        300
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyse this email and respond with ONLY valid JSON, no markdown, no explanation.\n\nEmail:\nFrom: {{ $('DecodeEmail').first().json.sender }}\nSubject: {{ $('DecodeEmail').first().json.subject }}\nDate: {{ $('DecodeEmail').first().json.date }}\nBody: {{ $('DecodeEmail').first().json.body }}\n\nUser active categories: {{ $('GetUserSettings_P1').first().json.categories }}\nUser urgency threshold: {{ $('GetUserSettings_P1').first().json.urgency_threshold }}\n\nRespond with this exact JSON shape:\n{\n  \"category\": \"one of: job_opportunity | finance | newsletter | social | promotional | travel | legal | health | security | personal | work | other\",\n  \"urgency_score\": 1-10,\n  \"tier\": \"URGENT | MODERATE | LOW\",\n  \"summary\": \"2-3 sentence summary\",\n  \"action\": \"what the user should do, or empty string\",\n  \"skip\": false\n}\n\nSet skip=true if the email category is NOT in user's active categories, or urgency_score is below the threshold. Tier: URGENT=7-10, MODERATE=3-6, LOW=1-2.",
+        "options": {
+          "systemMessage": "You are MailIQ, an email analysis AI. You MUST respond with ONLY valid JSON. No markdown, no explanation, no backticks. Just the raw JSON object."
+        }
+      }
+    },
+    {
+      "id": "p1-017-model",
+      "name": "Groq Model P1",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        3600,
+        460
+      ],
+      "parameters": {
+        "model": "llama-3.1-8b-instant",
+        "options": {
+          "temperature": 0.1
+        }
+      }
+    },
+    {
+      "id": "p1-018",
+      "name": "ParseAIOutput",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3840,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || '';\nlet parsed;\ntry {\n  parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());\n} catch(e) {\n  parsed = { skip: true, error: 'parse_failed', raw, category: 'other', urgency_score: 0, tier: 'LOW', summary: '', action: '' };\n}\nconst decoded = $('DecodeEmail').first().json;\nreturn [{ json: { ...parsed, ...decoded } }];"
+      }
+    },
+    {
+      "id": "p1-019",
+      "name": "SaveEmailRecord",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        4080,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_DB_API_URL/email_log",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: $json.user_id, message_id: $json.message_id, thread_id: $json.thread_id, sender: $json.sender, subject: $json.subject, category: $json.category, urgency_score: $json.urgency_score, tier: $json.tier, summary: $json.summary, action: $json.action, was_notified: false, created_at: new Date().toISOString() }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p1-020",
+      "name": "IfNotSkip",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4320,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "e1",
+              "leftValue": "={{ $('ParseAIOutput').first().json.skip }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-021",
+      "name": "QuietHours_P1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4560,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ (() => { const s=$('GetUserSettings_P1').first().json; const now=new Date(); const cur=now.getHours()*60+now.getMinutes(); const [sh,sm]=s.quiet_hours_start.split(':').map(Number); const [eh,em]=s.quiet_hours_end.split(':').map(Number); const start=sh*60+sm; const end=eh*60+em; return start>end?(cur>=start||cur<end):(cur>=start&&cur<end); })() }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p1-022",
+      "name": "FormatWhatsApp_P1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4800,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const e = $('ParseAIOutput').first().json;\nconst tierEmoji = { URGENT: '🔴', MODERATE: '🟡', LOW: '🟢' };\nconst emoji = tierEmoji[e.tier] || '📧';\n\nlet msg = `${emoji} *${e.tier} — ${e.category.replace('_',' ').toUpperCase()}*\\n`;\nmsg += `*From:* ${e.sender}\\n`;\nmsg += `*Subject:* ${e.subject}\\n\\n`;\nmsg += `${e.summary}`;\nif (e.action) msg += `\\n\\n✅ *Action:* ${e.action}`;\n\nreturn [{ json: { message: msg, record_id: $('SaveEmailRecord').first().json.id } }];"
+      }
+    },
+    {
+      "id": "p1-023",
+      "name": "SendWhatsApp_P1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5040,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ number: 'YOUR_WHATSAPP_NUMBER', text: $json.message }) }}",
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p1-024",
+      "name": "UpdateNotified",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5280,
+        300
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=YOUR_DB_API_URL/email_log/{{ $('FormatWhatsApp_P1').first().json.record_id }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={ \"was_notified\": true }",
+        "options": {}
+      }
+    },
+    {
+      "id": "p1-025",
+      "name": "UpdateLastChecked",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        5520,
+        300
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "YOUR_DB_API_URL/user_settings/YOUR_USER_ID",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ last_checked_at: new Date().toISOString() }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p2-001",
+      "name": "HourlyCheck",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        800
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "p2-002",
+      "name": "GetUserSettings_P2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        800
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/user_settings",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p2-003",
+      "name": "IsDigestTime",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        800
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "g1",
+              "leftValue": "={{ $json.is_active }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "g2",
+              "leftValue": "={{ new Date().getHours().toString().padStart(2,'0') + ':00' }}",
+              "rightValue": "={{ $json.digest_time }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p2-004",
+      "name": "FetchTodaysEmails",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        800
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/email_log",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            },
+            {
+              "name": "created_at_gte",
+              "value": "={{ new Date(new Date().setHours(0,0,0,0)).toISOString() }}"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p2-005",
+      "name": "HasEmails_P2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        800
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "h1",
+              "leftValue": "={{ Array.isArray($json) ? $json.length : ($json.data?.length || 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p2-005b",
+      "name": "NoEmailsToday",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1200,
+        660
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={ \"number\": \"YOUR_WHATSAPP_NUMBER\", \"text\": \"📬 MailIQ — no new emails today.\" }"
+      }
+    },
+    {
+      "id": "p2-006",
+      "name": "BuildDigestPrompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        800
+      ],
+      "parameters": {
+        "jsCode": "const emails = Array.isArray($input.first().json) ? $input.first().json : ($input.first().json.data || []);\n\nconst stats = {\n  total: emails.length,\n  urgent: emails.filter(e => e.tier === 'URGENT').length,\n  moderate: emails.filter(e => e.tier === 'MODERATE').length,\n  low: emails.filter(e => e.tier === 'LOW').length,\n  skipped: emails.filter(e => !e.was_notified).length\n};\n\nconst byCategory = {};\nfor (const email of emails) {\n  const cat = email.category || 'other';\n  if (!byCategory[cat]) byCategory[cat] = [];\n  byCategory[cat].push({\n    subject: email.subject,\n    sender: email.sender,\n    urgency_score: email.urgency_score,\n    summary: email.summary\n  });\n}\n\nreturn [{ json: { stats, byCategory, date: new Date().toDateString(), rawCount: emails.length } }];"
+      }
+    },
+    {
+      "id": "p2-007",
+      "name": "AIAgent_P2",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1440,
+        800
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ JSON.stringify($json) }}",
+        "options": {
+          "systemMessage": "You are MailIQ's daily digest writer. You receive pre-processed email stats and grouped summaries. Return ONLY valid JSON, no markdown, no explanation:\n{\n  \"headline\": \"one punchy sentence summarising the day\",\n  \"urgent_highlights\": [\"top 2-3 urgent items as short strings\"],\n  \"category_breakdown\": [{ \"category\": \"\", \"count\": 0, \"highlight\": \"\" }],\n  \"action_items\": [\"things the user should act on today\"],\n  \"stat_line\": \"X emails · Y urgent · Z skipped\"\n}\nKeep every string under 100 characters. WhatsApp-friendly, no markdown headers inside strings."
+        }
+      }
+    },
+    {
+      "id": "p2-007-model",
+      "name": "OpenAI Model P2",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        960
+      ],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.3
+        }
+      }
+    },
+    {
+      "id": "p2-008",
+      "name": "ParseDigestOutput",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        800
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || '';\nlet parsed;\ntry {\n  parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());\n} catch(e) {\n  parsed = { skip: true, error: 'parse_failed', headline: 'Digest unavailable', urgent_highlights: [], category_breakdown: [], action_items: [], stat_line: '' };\n}\nreturn [{ json: parsed }];"
+      }
+    },
+    {
+      "id": "p2-009",
+      "name": "QuietHours_P2",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        800
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "i1",
+              "leftValue": "={{ (() => { const s=$('GetUserSettings_P2').first().json; const now=new Date(); const cur=now.getHours()*60+now.getMinutes(); const [sh,sm]=s.quiet_hours_start.split(':').map(Number); const [eh,em]=s.quiet_hours_end.split(':').map(Number); const start=sh*60+sm; const end=eh*60+em; return start>end?(cur>=start||cur<end):(cur>=start&&cur<end); })() }}",
+              "rightValue": false,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p2-010",
+      "name": "FormatDigest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        800
+      ],
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst date = $('BuildDigestPrompt').first().json.date;\n\nlet msg = `📬 *MailIQ Daily Digest — ${date}*\\n${d.stat_line}\\n\\n`;\n\nif (d.urgent_highlights?.length) {\n  msg += `🔴 *Needs attention*\\n`;\n  d.urgent_highlights.forEach(h => msg += `• ${h}\\n`);\n  msg += '\\n';\n}\n\nif (d.category_breakdown?.length) {\n  msg += `📂 *By category*\\n`;\n  d.category_breakdown.forEach(c => msg += `• ${c.category} (${c.count}): ${c.highlight}\\n`);\n  msg += '\\n';\n}\n\nif (d.action_items?.length) {\n  msg += `✅ *Action items*\\n`;\n  d.action_items.forEach(a => msg += `• ${a}\\n`);\n  msg += '\\n';\n}\n\nmsg += `_${d.headline}_`;\n\nreturn [{ json: { message: msg, stats: $('BuildDigestPrompt').first().json.stats } }];"
+      }
+    },
+    {
+      "id": "p2-011",
+      "name": "SendWhatsApp_P2",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2400,
+        800
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ number: 'YOUR_WHATSAPP_NUMBER', text: $json.message }) }}",
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p2-012",
+      "name": "LogDigestSent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        800
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_DB_API_URL/digest_log",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: 'YOUR_USER_ID', sent_at: new Date().toISOString(), email_count: $('FormatDigest').first().json.stats.total, urgent_count: $('FormatDigest').first().json.stats.urgent, digest_text: $('FormatDigest').first().json.message }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-001",
+      "name": "Webhook_P3",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        1300
+      ],
+      "parameters": {
+        "path": "mailiq-assistant",
+        "httpMethod": "POST",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "mailiq-assistant-webhook"
+    },
+    {
+      "id": "p3-002",
+      "name": "GetUserSettings_P3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        240,
+        1300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/user_settings",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-003",
+      "name": "GetMemory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        480,
+        1300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/conversation_memory",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            },
+            {
+              "name": "limit",
+              "value": "10"
+            },
+            {
+              "name": "order",
+              "value": "created_at.desc"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-004",
+      "name": "CheckPendingDraft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        1300
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "YOUR_DB_API_URL/pending_drafts",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            },
+            {
+              "name": "status",
+              "value": "awaiting_approval"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-005",
+      "name": "HasPendingDraft",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        960,
+        1300
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "j1",
+              "leftValue": "={{ Array.isArray($json) ? $json.length : ($json.data?.length || 0) }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p3-006",
+      "name": "ApprovalAgent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1200,
+        1150
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "=Pending draft: {{ JSON.stringify($('CheckPendingDraft').first().json[0] || $('CheckPendingDraft').first().json) }}\n\nUser reply: {{ $('Webhook_P3').first().json.body.message }}",
+        "options": {
+          "systemMessage": "You are a draft approval handler for MailIQ. Determine the user's intent regarding their pending email draft and respond ONLY with valid JSON:\n{\n  \"action\": \"send\" | \"cancel\" | \"edit\",\n  \"updatedDraft\": { \"to\": \"\", \"subject\": \"\", \"body\": \"\", \"reply_to\": \"\" },\n  \"reason\": \"brief explanation\"\n}\nRules:\n- 'send' if the user approves the draft as-is\n- 'cancel' if the user wants to discard it\n- 'edit' if the user wants changes — incorporate those changes into updatedDraft\n- For 'send' and 'cancel', copy the original draft into updatedDraft unchanged\n- Treat ambiguity as 'edit', never assume approval"
+        }
+      }
+    },
+    {
+      "id": "p3-006-model",
+      "name": "OpenAI Model Approval",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        1310
+      ],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.1
+        }
+      }
+    },
+    {
+      "id": "p3-007",
+      "name": "ParseApprovalOutput",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        1150
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.first().json.output || '';\nlet parsed;\ntry {\n  parsed = JSON.parse(raw.replace(/```json|```/g, '').trim());\n} catch(e) {\n  parsed = { action: 'edit', updatedDraft: {}, reason: 'parse_failed' };\n}\nreturn [{ json: parsed }];"
+      }
+    },
+    {
+      "id": "p3-008",
+      "name": "ApprovalSwitch",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1680,
+        1150
+      ],
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "send",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "send"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "cancel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "cancel"
+            },
+            {
+              "conditions": {
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "edit",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ]
+              },
+              "renameOutput": true,
+              "outputKey": "edit"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-009",
+      "name": "SendGmail",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        1020
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://gmail.googleapis.com/gmail/v1/users/me/messages/send",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $workflow.staticData.accessToken }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ (() => { const d=$('ParseApprovalOutput').first().json.updatedDraft; const raw=`To: ${d.to}\\nSubject: ${d.subject}\\nContent-Type: text/plain; charset=utf-8\\n\\n${d.body}`; return JSON.stringify({ raw: Buffer.from(raw).toString('base64url') }); })() }}",
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p3-010",
+      "name": "UpdateDraftSent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2160,
+        1020
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=YOUR_DB_API_URL/pending_drafts/{{ ($('CheckPendingDraft').first().json[0] || $('CheckPendingDraft').first().json).id }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={ \"status\": \"sent\", \"sent_at\": \"{{ new Date().toISOString() }}\" }",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-011",
+      "name": "DeleteDraft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        1150
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "=YOUR_DB_API_URL/pending_drafts/{{ ($('CheckPendingDraft').first().json[0] || $('CheckPendingDraft').first().json).id }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-012",
+      "name": "UpdatePendingDraft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        1280
+      ],
+      "parameters": {
+        "method": "PATCH",
+        "url": "=YOUR_DB_API_URL/pending_drafts/{{ ($('CheckPendingDraft').first().json[0] || $('CheckPendingDraft').first().json).id }}",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ ...($('ParseApprovalOutput').first().json.updatedDraft), status: 'awaiting_approval' }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-013",
+      "name": "FormatApproval",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        1150
+      ],
+      "parameters": {
+        "jsCode": "const action = $('ParseApprovalOutput').first().json.action;\nconst draft = $('ParseApprovalOutput').first().json.updatedDraft;\n\nif (action === 'send') {\n  return [{ json: { message: `✅ Email sent to ${draft.to}`, intent: 'approval_sent' } }];\n}\nif (action === 'cancel') {\n  return [{ json: { message: '🗑️ Draft cancelled.', intent: 'approval_cancelled' } }];\n}\nif (action === 'edit') {\n  const preview = `✏️ *Updated draft:*\\n\\n*To:* ${draft.to}\\n*Subject:* ${draft.subject}\\n\\n${(draft.body||'').slice(0,300)}...\\n\\nReply *yes* to send or *no* to cancel.`;\n  return [{ json: { message: preview, intent: 'approval_edit' } }];\n}\nreturn [{ json: { message: 'Something went wrong. Please try again.', intent: 'error' } }];"
+      }
+    },
+    {
+      "id": "p3-014",
+      "name": "AIAgent_P3",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        1200,
+        1400
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook_P3').first().json.body.message }}",
+        "options": {
+          "systemMessage": "=You are MailIQ, a WhatsApp-based AI email assistant. You help the user manage their emails, search their inbox history, manage notification settings, and send emails on their behalf.\n\nCRITICAL RULE: Never call SEND_EMAIL directly. Always call COMPOSE_EMAIL first to create a draft. The system will show the user a preview and ask for approval before anything is sent.\n\nUser conversation history:\n{{ JSON.stringify($('GetMemory').all().map(m => ({ role: m.json.role, content: m.json.content }))) }}\n\nUser settings:\n{{ JSON.stringify($('GetUserSettings_P3').first().json) }}\n\nKeep responses concise and WhatsApp-friendly (under 300 characters) unless showing a draft, query results, or digest summary."
+        }
+      }
+    },
+    {
+      "id": "p3-014-model",
+      "name": "OpenAI Model P3",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        1560
+      ],
+      "parameters": {
+        "model": "gpt-4o-mini",
+        "options": {
+          "temperature": 0.4
+        }
+      }
+    },
+    {
+      "id": "p3-tool-01",
+      "name": "QUERY_EMAILS",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        960,
+        1560
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/email_log",
+        "description": "Query the user's processed email history. Supports filtering by sender (sender=email), category (category=finance), tier (tier=URGENT), urgency_score_gte (minimum urgency), date_gte and date_lte (ISO date strings). Returns subject, sender, summary, tier, category, urgency_score, created_at, was_notified.",
+        "method": "GET",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            },
+            {
+              "name": "limit",
+              "value": "20"
+            }
+          ]
+        },
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-tool-02",
+      "name": "GET_SETTINGS",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1080,
+        1560
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/user_settings",
+        "description": "Get the user's current MailIQ settings including active categories, urgency threshold, quiet hours, digest time, and timezone. Use this when the user asks what their current settings are.",
+        "method": "GET",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            }
+          ]
+        },
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-tool-03",
+      "name": "UPDATE_SETTINGS",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        1640
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/user_settings/YOUR_USER_ID",
+        "description": "Update the user's MailIQ settings. Send only the fields to update as a JSON body. Fields: categories (array of category names), urgency_threshold (1-10), quiet_hours_start (HH:MM), quiet_hours_end (HH:MM), digest_time (HH:MM), timezone (IANA timezone string). Use this when the user wants to change their preferences.",
+        "method": "PATCH",
+        "sendBody": true,
+        "contentType": "json",
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-tool-04",
+      "name": "COMPOSE_EMAIL",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        1560
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/pending_drafts",
+        "description": "Compose an email draft for the user. Call this whenever the user wants to send, reply to, or forward an email. Send a JSON body with: to (recipient email), subject, body (email body text), reply_to (original email subject or empty string). This does NOT send — it saves a draft for user approval. Returns the draft ID.",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-tool-05",
+      "name": "GET_DIGEST",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1440,
+        1560
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/digest_log",
+        "description": "Retrieve the user's daily email digest. Use this when the user asks for a summary of today's or yesterday's emails. Supports date_gte parameter (ISO date string) to filter by date. Returns digest_text (the formatted digest message), email_count, urgent_count, sent_at.",
+        "method": "GET",
+        "sendQuery": true,
+        "parametersQuery": {
+          "values": [
+            {
+              "name": "user_id",
+              "value": "YOUR_USER_ID"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-tool-06",
+      "name": "INSERT_MEMORY",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        1560,
+        1560
+      ],
+      "parameters": {
+        "url": "YOUR_DB_API_URL/conversation_memory",
+        "description": "Save an important fact or preference the user has shared that should be remembered long-term across all conversations. Use this proactively when the user shares contact info, recurring preferences, or important context (e.g. 'my accountant is john@firm.com', 'always mark HR emails as urgent'). Send JSON with: role='memory', content=the fact to remember.",
+        "method": "POST",
+        "sendBody": true,
+        "contentType": "json",
+        "optimizeResponse": true,
+        "responseType": "json"
+      }
+    },
+    {
+      "id": "p3-015",
+      "name": "ParseAssistantOutput",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        1400
+      ],
+      "parameters": {
+        "jsCode": "const output = $input.first().json;\nconst toolCalls = output.toolCalls || output.tool_calls || [];\nconst hasDraft = toolCalls.some(t => t.name === 'COMPOSE_EMAIL' || t.function?.name === 'COMPOSE_EMAIL');\nconst draftData = hasDraft ? (toolCalls.find(t => t.name === 'COMPOSE_EMAIL' || t.function?.name === 'COMPOSE_EMAIL')) : null;\n\nreturn [{ json: { ...output, hasDraft, draftData } }];"
+      }
+    },
+    {
+      "id": "p3-016",
+      "name": "IsDraftOutput",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        1400
+      ],
+      "parameters": {
+        "conditions": {
+          "conditions": [
+            {
+              "id": "k1",
+              "leftValue": "={{ $json.hasDraft }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      }
+    },
+    {
+      "id": "p3-017",
+      "name": "SavePendingDraft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1920,
+        1400
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_DB_API_URL/pending_drafts",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ user_id: 'YOUR_USER_ID', ...($json.draftData?.input || $json.draftData?.function?.arguments || {}), status: 'awaiting_approval', created_at: new Date().toISOString() }) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-018",
+      "name": "FormatMain",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        1400
+      ],
+      "parameters": {
+        "jsCode": "const hasDraft = $('IsDraftOutput').first().json.hasDraft;\nconst agentOutput = $('ParseAssistantOutput').first().json.output || '';\n\nif (hasDraft) {\n  const draftId = $('SavePendingDraft').first().json.id;\n  const draft = JSON.parse($('IsDraftOutput').first().json.draftData?.input || '{}');\n  const msg = `📝 *Draft ready — please review:*\\n\\n*To:* ${draft.to || ''}\\n*Subject:* ${draft.subject || ''}\\n\\n${(draft.body||'').slice(0,300)}${(draft.body||'').length>300?'...':''}\\n\\nReply *yes* to send or *no* to cancel.`;\n  return [{ json: { message: msg, intent: 'draft_preview' } }];\n}\n\nreturn [{ json: { message: agentOutput, intent: 'assistant_reply' } }];"
+      }
+    },
+    {
+      "id": "p3-019",
+      "name": "MergeResponses",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3,
+      "position": [
+        2640,
+        1300
+      ],
+      "parameters": {
+        "mode": "chooseBranch",
+        "chooseBranchMode": "waitForAll",
+        "output": "preferBranch",
+        "preferBranch": "branch0"
+      }
+    },
+    {
+      "id": "p3-020",
+      "name": "SaveMemory",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2880,
+        1300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_DB_API_URL/conversation_memory",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify([{ user_id: 'YOUR_USER_ID', role: 'user', content: $('Webhook_P3').first().json.body.message, created_at: new Date().toISOString() }, { user_id: 'YOUR_USER_ID', role: 'assistant', content: $json.message, created_at: new Date().toISOString() }]) }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "p3-021",
+      "name": "SendWhatsApp_P3",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3120,
+        1300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE",
+        "sendBody": true,
+        "contentType": "json",
+        "jsonBody": "={{ JSON.stringify({ number: 'YOUR_WHATSAPP_NUMBER', text: $('MergeResponses').first().json.message }) }}",
+        "options": {
+          "retryOnFail": {
+            "retry": true,
+            "maxTries": 3,
+            "waitBetweenTries": 2000
+          }
+        }
+      }
+    },
+    {
+      "id": "p3-022",
+      "name": "WebhookResponse",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        3360,
+        1300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"status\": \"ok\" }",
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "EveryMinute": {
+      "main": [
+        [
+          {
+            "node": "CheckTokenCache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckTokenCache": {
+      "main": [
+        [
+          {
+            "node": "NeedsRefresh",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NeedsRefresh": {
+      "main": [
+        [
+          {
+            "node": "RefreshOAuth",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "MergeToken",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "RefreshOAuth": {
+      "main": [
+        [
+          {
+            "node": "SaveTokenCache",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SaveTokenCache": {
+      "main": [
+        [
+          {
+            "node": "MergeToken",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MergeToken": {
+      "main": [
+        [
+          {
+            "node": "GetUserSettings_P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetUserSettings_P1": {
+      "main": [
+        [
+          {
+            "node": "IsActive_P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsActive_P1": {
+      "main": [
+        [
+          {
+            "node": "FetchEmails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "FetchEmails": {
+      "main": [
+        [
+          {
+            "node": "HasNewEmails",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HasNewEmails": {
+      "main": [
+        [
+          {
+            "node": "SplitEmails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "SplitEmails": {
+      "main": [
+        [
+          {
+            "node": "GetEmailDetail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetEmailDetail": {
+      "main": [
+        [
+          {
+            "node": "DecodeEmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DecodeEmail": {
+      "main": [
+        [
+          {
+            "node": "CheckDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckDuplicate": {
+      "main": [
+        [
+          {
+            "node": "IsDuplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsDuplicate": {
+      "main": [
+        [
+          {
+            "node": "AIAgent_P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "AIAgent_P1": {
+      "main": [
+        [
+          {
+            "node": "ParseAIOutput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseAIOutput": {
+      "main": [
+        [
+          {
+            "node": "SaveEmailRecord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SaveEmailRecord": {
+      "main": [
+        [
+          {
+            "node": "IfNotSkip",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IfNotSkip": {
+      "main": [
+        [
+          {
+            "node": "QuietHours_P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "QuietHours_P1": {
+      "main": [
+        [
+          {
+            "node": "FormatWhatsApp_P1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "FormatWhatsApp_P1": {
+      "main": [
+        [
+          {
+            "node": "SendWhatsApp_P1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendWhatsApp_P1": {
+      "main": [
+        [
+          {
+            "node": "UpdateNotified",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateNotified": {
+      "main": [
+        [
+          {
+            "node": "UpdateLastChecked",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Model P1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AIAgent_P1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HourlyCheck": {
+      "main": [
+        [
+          {
+            "node": "GetUserSettings_P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetUserSettings_P2": {
+      "main": [
+        [
+          {
+            "node": "IsDigestTime",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsDigestTime": {
+      "main": [
+        [
+          {
+            "node": "FetchTodaysEmails",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "FetchTodaysEmails": {
+      "main": [
+        [
+          {
+            "node": "HasEmails_P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HasEmails_P2": {
+      "main": [
+        [
+          {
+            "node": "BuildDigestPrompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "NoEmailsToday",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "BuildDigestPrompt": {
+      "main": [
+        [
+          {
+            "node": "AIAgent_P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AIAgent_P2": {
+      "main": [
+        [
+          {
+            "node": "ParseDigestOutput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseDigestOutput": {
+      "main": [
+        [
+          {
+            "node": "QuietHours_P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QuietHours_P2": {
+      "main": [
+        [
+          {
+            "node": "FormatDigest",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "FormatDigest": {
+      "main": [
+        [
+          {
+            "node": "SendWhatsApp_P2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendWhatsApp_P2": {
+      "main": [
+        [
+          {
+            "node": "LogDigestSent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model P2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AIAgent_P2",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook_P3": {
+      "main": [
+        [
+          {
+            "node": "GetUserSettings_P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetUserSettings_P3": {
+      "main": [
+        [
+          {
+            "node": "GetMemory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GetMemory": {
+      "main": [
+        [
+          {
+            "node": "CheckPendingDraft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CheckPendingDraft": {
+      "main": [
+        [
+          {
+            "node": "HasPendingDraft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HasPendingDraft": {
+      "main": [
+        [
+          {
+            "node": "ApprovalAgent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ApprovalAgent": {
+      "main": [
+        [
+          {
+            "node": "ParseApprovalOutput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseApprovalOutput": {
+      "main": [
+        [
+          {
+            "node": "ApprovalSwitch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ApprovalSwitch": {
+      "main": [
+        [
+          {
+            "node": "SendGmail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DeleteDraft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "UpdatePendingDraft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendGmail": {
+      "main": [
+        [
+          {
+            "node": "UpdateDraftSent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdateDraftSent": {
+      "main": [
+        [
+          {
+            "node": "FormatApproval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeleteDraft": {
+      "main": [
+        [
+          {
+            "node": "FormatApproval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UpdatePendingDraft": {
+      "main": [
+        [
+          {
+            "node": "FormatApproval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FormatApproval": {
+      "main": [
+        [
+          {
+            "node": "MergeResponses",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AIAgent_P3": {
+      "main": [
+        [
+          {
+            "node": "ParseAssistantOutput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ParseAssistantOutput": {
+      "main": [
+        [
+          {
+            "node": "IsDraftOutput",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IsDraftOutput": {
+      "main": [
+        [
+          {
+            "node": "SavePendingDraft",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "FormatMain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SavePendingDraft": {
+      "main": [
+        [
+          {
+            "node": "FormatMain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FormatMain": {
+      "main": [
+        [
+          {
+            "node": "MergeResponses",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "MergeResponses": {
+      "main": [
+        [
+          {
+            "node": "SaveMemory",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SaveMemory": {
+      "main": [
+        [
+          {
+            "node": "SendWhatsApp_P3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SendWhatsApp_P3": {
+      "main": [
+        [
+          {
+            "node": "WebhookResponse",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model Approval": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "ApprovalAgent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Model P3": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "QUERY_EMAILS": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET_SETTINGS": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "UPDATE_SETTINGS": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "COMPOSE_EMAIL": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET_DIGEST": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "INSERT_MEMORY": {
+      "ai_tool": [
+        [
+          {
+            "node": "AIAgent_P3",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "active": false,
+  "meta": {
+    "templateCredsSetupCompleted": false,
+    "instanceId": "mailiq-v1"
+  }
+}
