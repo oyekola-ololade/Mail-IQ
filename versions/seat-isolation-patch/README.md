@@ -1,6 +1,6 @@
 # MailIQ — Seat-Isolation Patch Record
 
-[← Version Index](../INDEX.md) · [Patch Architecture](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Patch Architecture](ARCHITECTURE.md)
 
 **Status:** REFERENCED PATCH / ORIGINAL NOT LOCATED  
 **Relationship:** incorporated into the mature v5 state-isolation direction.
