@@ -1,5 +1,7 @@
 # MailIQ v1.0 — Historical Baseline Architecture
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+
 **Status:** HISTORICAL  
 **Primary surviving authority:** Architecture Specification v1.0  
 **Role in lineage:** baseline product/system definition.
@@ -7,6 +9,12 @@
 ## What this version represents
 
 v1.0 is the earliest named architecture generation retained in the reconstructed archive. It establishes the original MailIQ product boundary before later workflow, tenancy, credential, state and infrastructure decisions were repeatedly revised.
+
+## Architecture
+
+[Open the v1.0 architecture diagram →](ARCHITECTURE.md)
+
+The diagram is a historical explanatory model derived from the surviving v1.0 architecture record; it is not a recovered runtime screenshot.
 
 ## Architectural interpretation
 
@@ -33,4 +41,4 @@ The importance of v1.0 is that later versions moved away from its early assumpti
 
 ## Media
 
-Historical version. Per repository policy there are **no demo/screenshot placeholders** for old versions.
+Historical version. It has architecture documentation, but there are **no fake demo/screenshot placeholders** for runtime evidence that does not exist.
