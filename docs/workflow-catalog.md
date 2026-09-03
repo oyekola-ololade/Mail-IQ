@@ -1,17 +1,24 @@
-# Canonical workflow catalog
+# MailIQ Workflow Catalog — Current vs Historical
 
-## Count boundary
+## Why this catalog exists
 
-The canonical v5 set contains **35 workflows and 676 nodes**:
+MailIQ has multiple surviving workflow generations. Counts from different folders describe different artifact sets and **must not be added together or treated as one verified deployment**.
+
+The repository therefore separates:
+
+1. a **35-workflow documented system/template design set** from the older primary build generation; and
+2. a **38-export recovered later-generation pool** associated with the later MailIQ workflow generation and v5 reconstruction work.
+
+Neither count, by itself, proves a currently deployed production system.
+
+## Generation A — documented 35-workflow design set
+
+This set contains **35 workflows and 676 nodes**:
 
 - 19 system workflows / 204 nodes
 - 16 child delivery templates / 472 nodes
 
-A separate older MailIQ folder contains 38 exports / 498 nodes. Those older exports are useful evolution evidence but are not added to the canonical count.
-
-Node totals were calculated by parsing all 76 JSON artifacts found in Drive. Every JSON artifact parsed successfully.
-
-## System workflows
+### System workflows
 
 | ID | Workflow | Nodes | Responsibility |
 |---|---|---:|---|
@@ -35,9 +42,7 @@ Node totals were calculated by parsing all 76 JSON artifacts found in Drive. Eve
 | SW-18 | Admin Alerts | 5 | Routes operational exceptions to an administrator. |
 | SW-19 | Settings API | 11 | Reads and writes tenant configuration. |
 
-## Tenant delivery templates
-
-The first eight Gmail templates contain 30 nodes each. The eight Outlook templates contain 29 nodes each.
+### Tenant delivery templates
 
 | ID | Provider → destination | Nodes |
 |---|---|---:|
@@ -58,32 +63,44 @@ The first eight Gmail templates contain 30 nodes each. The eight Outlook templat
 | T15 | Outlook → Discord Channel | 29 |
 | T16 | Outlook → Discord DM | 29 |
 
-## Template dimensions
+This set is useful design/evolution evidence. It should not be described as the uniquely authoritative current v5 runtime bundle without a fresh release-selection review.
 
-```mermaid
-flowchart TB
-    Provider{"Email provider"}
-    Gmail["Gmail"]
-    Outlook["Outlook"]
-    Destination{"Delivery destination"}
-    Channel["WhatsApp · Telegram · Slack · Discord"]
-    Mode["Personal · group · channel · DM"]
+## Generation B — 38 recovered later-generation exports
 
-    Provider --> Gmail
-    Provider --> Outlook
-    Gmail --> Destination
-    Outlook --> Destination
-    Destination --> Channel
-    Channel --> Mode
-```
+The later MailIQ archive contains **38 JSON workflow exports** spanning:
 
-The templates combine provider-specific ingestion with channel-specific delivery. They are not 16 unrelated products; they are a reusable matrix of tenant execution paths.
+- onboarding/router and plan-specific onboarding;
+- Free/Basic/Standard/Premium tier processors;
+- multi-webhook routing;
+- subscription lifecycle and billing reconciliation;
+- notification, digest, quiet-hours and usage functions;
+- Telegram, Slack, Discord, Gmail and Outlook integration lifecycle handlers;
+- token refresh and provider-renewal workflows;
+- health, backup, admin-alert, settings, purge/history and DLQ operations;
+- conversational-agent and tool workflows for calendar, email search, settings, draft/send and token refresh.
 
-## Published exports
+This later set is the **candidate canonical pool for v5 reconciliation**, not automatically a verified current bundle. Every workflow still needs to be checked against the v5 architecture authority, sanitized for public release, and rerun where runtime claims matter.
 
-Only representative, sanitized files are included in the public repository:
+## Count boundary
+
+The archive contains at least 76 JSON artifacts across generations. Those files are evidence of substantial multi-version engineering work, not evidence that 76 workflows were simultaneously deployed.
+
+## Public exports
+
+Only representative, sanitized or explicitly historical files should be published here until individual release review is complete.
+
+Current public examples:
 
 - `workflows/sanitized/SW-01_Onboarding_Factory_SANITIZED.json`
 - `workflows/historical/MailIQ_n8n_import_fixed.json`
 
-The remaining Drive exports stay private until each file receives a dedicated release review. A secret-pattern scan found no obvious live secret strings in the 76 JSON files, but that automated result is not sufficient authorization to publish all exports.
+## Release rule
+
+A workflow should move into a future `workflows/current/` bundle only after:
+
+1. architecture-generation identity is known;
+2. secrets and environment-specific identifiers are removed;
+3. JSON parses and imports successfully;
+4. data/state contracts match the selected v5 authority;
+5. critical expressions and branch behavior are inspected;
+6. configured runtime verification exists for any behavior claimed as working.
