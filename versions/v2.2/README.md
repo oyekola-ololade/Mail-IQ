@@ -1,6 +1,6 @@
 # MailIQ v2.2 — Historical Complete Build Specification
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL  
 **Primary surviving authority:** Complete Build Spec v2.2  
