@@ -1,6 +1,6 @@
 # MailIQ v4.1 — Historical Unified Architecture
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL — superseded by v5, but important decision authority  
 **Primary surviving authority:** Unified Architecture v4.1
