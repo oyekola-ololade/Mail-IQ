@@ -1,5 +1,7 @@
 # MailIQ v2.2 — Historical Complete Build Specification
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+
 **Status:** HISTORICAL  
 **Primary surviving authority:** Complete Build Spec v2.2  
 **Role in lineage:** first strongly explicit two-layer build decomposition with a large named workflow set.
@@ -12,6 +14,12 @@ v2.2 described MailIQ as a two-layer system and made the implementation plan muc
 - n8n credential-oriented assumptions for provider access;
 - MinIO in the architecture;
 - a more explicit build decomposition than earlier versions.
+
+## Architecture
+
+[Open the v2.2 architecture diagram →](ARCHITECTURE.md)
+
+The diagram preserves the two-layer build, 36-workflow generation, n8n credential-oriented provider access, database state and MinIO relationship as a distinct historical architecture.
 
 ## Workflow interpretation
 
@@ -41,4 +49,4 @@ It is one of the strongest historical records for how MailIQ was intended to be 
 
 ## Media
 
-Historical version. No demo/screenshot placeholders.
+Historical version. Architecture is documented; demo/screenshot evidence is not fabricated.
