@@ -9,25 +9,45 @@
 <p align="center"><strong>Offline Prototype</strong> · Previously trialled · Multi-version engineering archive · Not a live SaaS</p>
 
 <p align="center">
-  <a href="TABLE_OF_CONTENTS.md"><strong>Table of Contents</strong></a> ·
-  <a href="versions/TABLE_OF_CONTENTS.md"><strong>Version Archive</strong></a> ·
+  <a href="versions/README.md"><strong>Version Archive</strong></a> ·
   <a href="workflows/current-candidate/README.md"><strong>38-Workflow Candidate Bundle</strong></a> ·
   <a href="docs/MULTI_WORKFLOW_SYSTEM_MAP.md"><strong>System Map</strong></a>
 </p>
 
 ---
 
-## Table of contents / repository navigation
+## Table of contents
 
-Start with:
+- [Current status](#current-status)
+- [The problem](#the-problem)
+- [The system response](#the-system-response)
+- [Architecture boundary](#architecture-boundary)
+- [Version history](#version-history)
+- [Workflow generations](#workflow-generations)
+- [Current 38-workflow subsystem structure](#current-38-workflow-subsystem-structure)
+- [What is implemented or evidenced](#what-is-implemented-or-evidenced-across-the-archive)
+- [Reliability findings](#reliability-findings-that-matter)
+- [Evidence you can inspect](#evidence-you-can-inspect)
+- [Public workflow policy](#public-workflow-policy)
+- [Repository map](#repository-map)
+- [Evidence boundary](#evidence-boundary)
 
-- **[TABLE_OF_CONTENTS.md](TABLE_OF_CONTENTS.md)** — canonical repository-wide navigation and current truth boundary.
-- **[versions/TABLE_OF_CONTENTS.md](versions/TABLE_OF_CONTENTS.md)** — v1.0 → v5.0 lineage with per-version architecture diagrams.
-- **[workflows/current-candidate/README.md](workflows/current-candidate/README.md)** — sanitized 38-export candidate bundle grouped by subsystem.
-- **[docs/MULTI_WORKFLOW_SYSTEM_MAP.md](docs/MULTI_WORKFLOW_SYSTEM_MAP.md)** — how the cooperating workflow families fit together.
-- **[docs/architecture/](docs/architecture/)** — current architecture deep dives.
+### Version / architecture quick links
 
-Every version/generation has its own README and architecture page. Where an original source was not recovered, the architecture page is explicitly labelled as an evidence-bounded reconstruction/envelope rather than a recovered original. Historical versions still receive architecture diagrams; only current runtime demo/screenshot evidence is restricted to real or placeholder current evidence.
+| Version / generation | Status | Version README | Architecture |
+|---|---|---|---|
+| v1.0 | Historical baseline | [open](versions/v1.0/README.md) | [diagram](versions/v1.0/ARCHITECTURE.md) |
+| v1.1 | Historical workflow-heavy | [open](versions/v1.1/README.md) | [diagram](versions/v1.1/ARCHITECTURE.md) |
+| v2.2 | Historical 36-workflow build | [open](versions/v2.2/README.md) | [diagram](versions/v2.2/ARCHITECTURE.md) |
+| v3.0 | Historical state/infrastructure correction | [open](versions/v3.0/README.md) | [diagram](versions/v3.0/ARCHITECTURE.md) |
+| v3.1 | Historical node-level expansion | [open](versions/v3.1/README.md) | [diagram](versions/v3.1/ARCHITECTURE.md) |
+| v4.1 | Historical shared-workflow authority | [open](versions/v4.1/README.md) | [diagram](versions/v4.1/ARCHITECTURE.md) |
+| v4.2 | Referenced; original not located | [open](versions/v4.2/README.md) | [known envelope](versions/v4.2/ARCHITECTURE.md) |
+| v4.3 | Referenced; original not located | [open](versions/v4.3/README.md) | [known envelope](versions/v4.3/ARCHITECTURE.md) |
+| Seat-isolation patch | Referenced patch | [open](versions/seat-isolation-patch/README.md) | [diagram](versions/seat-isolation-patch/ARCHITECTURE.md) |
+| v5.0 | **Current architecture authority** | [open](versions/v5.0/README.md) | [diagram](versions/v5.0/ARCHITECTURE.md) |
+
+The version folder also has its own self-rendering [`versions/README.md`](versions/README.md). Historical versions receive architecture diagrams; runtime screenshots/demos are only used when genuine evidence exists.
 
 ## Current status
 
@@ -90,6 +110,10 @@ flowchart TB
 
 The diagram is an architecture model derived from inspected v5-era specifications and workflow evidence. It is not a claim that every component is currently deployed.
 
+## Version history
+
+Open [`versions/README.md`](versions/README.md) for the detailed lineage and cross-version decision arc. Every version/generation has a dedicated README and architecture page. Where an original standalone source was not recovered, the architecture page is explicitly labelled as an evidence-bounded reconstruction/envelope rather than a recovered original.
+
 ## Workflow generations
 
 ### Documented 35-workflow design set
@@ -146,9 +170,9 @@ See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Evidence you can inspect
 
-- [Table of Contents](TABLE_OF_CONTENTS.md)
-- [Version archive Table of Contents](versions/TABLE_OF_CONTENTS.md)
+- [Version archive](versions/README.md)
 - [Sanitized current-candidate workflow bundle](workflows/current-candidate/README.md)
+- [Multi-workflow system map](docs/MULTI_WORKFLOW_SYSTEM_MAP.md)
 - [Workflow catalog](docs/workflow-catalog.md)
 - [Architecture](docs/architecture.md)
 - [Architecture deep dive](docs/architecture/)
@@ -168,10 +192,9 @@ The public candidate bundle may contain sanitized workflow JSON while still rema
 
 ```text
 .
-├── TABLE_OF_CONTENTS.md          Canonical repository navigation
-├── README.md                    Project overview + visible TOC links
+├── README.md                    Project overview + embedded table of contents
 ├── versions/
-│   ├── TABLE_OF_CONTENTS.md     v1.0 → v5.0 lineage
+│   ├── README.md                v1.0 → v5.0 archive overview
 │   └── <version>/
 │       ├── README.md
 │       └── ARCHITECTURE.md      Version-specific architecture diagram
@@ -185,8 +208,6 @@ The public candidate bundle may contain sanitized workflow JSON while still rema
 ├── SECURITY.md
 └── CHANGELOG.md
 ```
-
-`INDEX.md` and `versions/INDEX.md` remain only as compatibility redirects for old links.
 
 ## Historical/design stack
 
