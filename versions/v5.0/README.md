@@ -1,5 +1,7 @@
 # MailIQ v5.0 — Current Architecture Authority
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md) · [38-Workflow Candidate Bundle](../../workflows/current-candidate/README.md)
+
 **Status:** CURRENT ARCHITECTURE AUTHORITY · runtime bundle still under reconciliation / revalidation
 
 ## Current position
@@ -7,6 +9,12 @@
 v5.0 is the architecture and system-decision authority for MailIQ. It does **not** mean every surviving workflow export has been proven to be a current v5 runtime artifact, and it does not mean the system is currently deployed.
 
 MailIQ is currently presented as an **offline/pre-production multi-version SaaS engineering system** while workflow-generation mapping, state/reliability checks and sanitization are completed.
+
+## Architecture
+
+[Open the v5.0 architecture diagram →](ARCHITECTURE.md)
+
+The diagram includes the application/control plane, PostgreSQL authoritative state, provider edge, delivery edge, and the seven current-candidate workflow subsystems containing the recovered 38 sanitized exports.
 
 ## Core architecture decisions
 
@@ -23,7 +31,9 @@ MailIQ is currently presented as an **offline/pre-production multi-version SaaS 
 
 ## Current-candidate workflow pool
 
-A later archive contains **38 workflow exports**. They are the candidate canonical pool for v5 reconciliation, not automatically 38 verified current runtime definitions.
+A later archive contains **38 workflow exports**. Sanitized public copies are grouped under [`../../workflows/current-candidate/`](../../workflows/current-candidate/README.md).
+
+They are the candidate canonical pool for v5 reconciliation, not automatically 38 verified current runtime definitions.
 
 See [WORKFLOW_INDEX.md](WORKFLOW_INDEX.md) for the subsystem map.
 
@@ -49,7 +59,7 @@ This class of defect is one reason v5 remains under hardening rather than being 
 
 ## Current media
 
-Unlike historical versions, the current version has explicit media locations:
+Unlike historical versions, the current version has explicit runtime-evidence locations:
 
 - [Demo status / placeholder](../../evidence/current/demo/README.md)
 - [Screenshot status / placeholder](../../evidence/current/screenshots/README.md)
