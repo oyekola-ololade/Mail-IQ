@@ -1,6 +1,6 @@
 # MailIQ v4.2 — Referenced Version, Original Not Located
 
-[← Version Index](../INDEX.md) · [Known Architecture Envelope](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Known Architecture Envelope](ARCHITECTURE.md)
 
 **Status:** REFERENCED / ORIGINAL NOT LOCATED  
 **Current rule:** do not fabricate a standalone v4.2 specification.
