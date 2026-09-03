@@ -1,6 +1,6 @@
 # MailIQ v3.0 — Historical State & Infrastructure Correction
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL  
 **Primary surviving authority:** Final Architecture v3.0
