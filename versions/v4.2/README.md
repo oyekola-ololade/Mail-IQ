@@ -1,11 +1,19 @@
 # MailIQ v4.2 — Referenced Version, Original Not Located
 
+[← Version Index](../INDEX.md) · [Known Architecture Envelope](ARCHITECTURE.md)
+
 **Status:** REFERENCED / ORIGINAL NOT LOCATED  
 **Current rule:** do not fabricate a standalone v4.2 specification.
 
 ## What is known
 
 The reconstructed archive records a v4.2 generation whose changes were later folded into v5.0. The exact standalone v4.2 source text was not located during the 2026-09-03 archive audit.
+
+## Architecture
+
+[Open the evidence-supported v4.2 architecture envelope →](ARCHITECTURE.md)
+
+Because the original was not recovered, the diagram explicitly shows the known v4.1 → v4.2 → v5 continuity and labels the exact v4.2 delta as unknown. It is not presented as a recovered original diagram.
 
 ## What is not safe to infer
 
@@ -27,4 +35,4 @@ If an original v4.2 artifact is later found:
 
 ## Media
 
-Historical/referenced version. No demo/screenshot placeholders.
+Architecture lineage is documented. Demo/screenshot runtime evidence is not fabricated.
