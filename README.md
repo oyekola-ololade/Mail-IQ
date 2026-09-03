@@ -4,41 +4,27 @@
 
 <h1 align="center">MailIQ</h1>
 
-<p align="center">
-  Multi-tenant email intelligence that converts Gmail and Outlook activity into structured, tenant-aware operational signals.
-</p>
+<p align="center">Multi-tenant email intelligence for turning Gmail and Outlook activity into structured, tenant-aware operational signals.</p>
 
-<p align="center">
-  <strong>Offline Prototype</strong> · Previously trialled · Evidence-backed · Not a live SaaS
-</p>
+<p align="center"><strong>Offline Prototype</strong> · Previously trialled · Multi-version engineering archive · Not a live SaaS</p>
 
 ---
 
+## Current status
+
+MailIQ is a substantial historical/pre-production system with multiple surviving workflow and architecture generations. It was intended as a live SaaS, was previously trialled, and is currently offline while state-management, reliability, sanitization, and verification work are separated from historical design evidence.
+
+This repository does **not** claim current paying customers, current public availability, production readiness, or a fully verified v5 runtime bundle.
+
 ## The problem
 
-Important work competes with newsletters, receipts, alerts, and routine conversation inside the same inbox. Teams monitoring multiple Gmail and Outlook accounts must repeatedly read, classify, prioritize, and forward messages by hand. Urgent action can be missed, while routing knowledge remains trapped in individual inboxes.
+Important operational email competes with newsletters, receipts, alerts, and routine conversation inside the same inbox. Teams monitoring multiple Gmail and Outlook accounts repeatedly classify, prioritize, extract, route, and follow up on messages by hand. Urgent work can be missed, while routing knowledge remains trapped in individual inboxes.
 
 ## The system response
 
-MailIQ was designed to turn each incoming message into structured intent, urgency, extracted details, and a recommended action—then route that result to the communication channel selected for that tenant.
+MailIQ was designed to convert incoming messages into structured intent, urgency, extracted details, and recommended actions, then route the result to a tenant-selected destination while keeping provider subscriptions, OAuth state, tenant configuration, delivery results, metering, billing, and reconciliation visible as system state.
 
-This repository now exposes the real engineering evidence behind that idea: a 35-workflow canonical design, representative sanitized n8n exports, a multi-tenant data model, provider lifecycle design, reliability findings, and the production boundary.
-
-| Evidence signal | Verified from the Drive archive |
-|---|---:|
-| Canonical system workflows | 19 |
-| Canonical tenant templates | 16 |
-| Canonical workflow nodes | 676 |
-| Older architecture exports | 38 |
-| Older architecture nodes | 498 |
-| JSON artifacts inspected | 76 |
-| Total Drive artifacts inspected | 115 |
-
-> Counts describe inspected design and workflow artifacts. They do not mean that all workflows are deployed or production-verified.
-
-## Architecture
-
-MailIQ is not a one-way “email in, message out” automation. Provider subscriptions, OAuth state, tenant configuration, delivery results, metering, and reconciliation all send information back into orchestration.
+## Architecture boundary
 
 ```mermaid
 flowchart TB
@@ -48,126 +34,143 @@ flowchart TB
       OAuth["OAuth + token lifecycle"]
     end
 
-    subgraph Control["Tenant control plane"]
+    subgraph Product["Product / control plane"]
+      UI["User / admin UI"]
       API["Node.js API"]
-      State[("PostgreSQL tenant state")]
-      Factory["Workflow factory"]
-      Billing["Billing + usage"]
+      State[("PostgreSQL authoritative state")]
+      Billing["Subscription + usage"]
     end
 
-    subgraph Runtime["Intelligence runtime"]
+    subgraph Runtime["n8n orchestration"]
       Ingest["Event ingestion"]
-      Guard["Dedup + ownership guard"]
+      Guard["Ownership + dedup guards"]
       Classify["Classify · score · extract"]
-      Route["Tenant-aware router"]
-      Queue["Message queue"]
+      Route["Tenant-aware routing"]
+      Queue["Delivery / retry state"]
     end
 
-    subgraph Channels["Delivery + authority"]
-      Delivery["WhatsApp · Telegram · Slack · Discord"]
+    subgraph Destinations["Delivery + operations"]
+      Channels["WhatsApp · Telegram · Slack · Discord"]
+      Observe["Health · alerts · reconciliation · DLQ"]
       Operator["Operator / administrator"]
-      Observe["Health · alerts · reconciliation"]
     end
 
     Gmail --> Ingest
     Outlook --> Ingest
     OAuth <--> API
+    UI --> API
     API <--> State
-    API --> Factory
     Billing <--> State
-    Factory --> Route
-    Ingest --> Guard --> Classify --> Route --> Queue --> Delivery
+    Ingest --> Guard --> Classify --> Route --> Queue --> Channels
     State <--> Guard
     State <--> Classify
-    Delivery -->|provider result| Observe
-    Observe -->|retry / repair signal| Queue
-    Observe -->|state drift| State
-    Operator -->|approval / correction| API
+    Channels --> Observe
+    Observe --> Queue
+    Observe --> State
     Observe --> Operator
+    Operator --> API
 ```
 
-The diagram is a current architecture model derived from the inspected v5 specification and workflow evidence—not a claim that every component is presently running.
+The diagram is an architecture model derived from inspected v5-era specifications and workflow evidence. It is not a claim that every component is currently deployed.
+
+## Workflow generations
+
+MailIQ has more than one legitimate workflow generation. That distinction matters.
+
+### Documented 35-workflow design set
+
+One surviving primary-build generation contains **19 system workflows + 16 tenant delivery templates (35 total)** with a parsed node inventory of 676 nodes.
+
+### Recovered later-generation pool
+
+A later MailIQ archive contains **38 workflow exports** covering onboarding/plan flows, tier processors, billing, provider lifecycle handlers, notifications, usage, health/backup/admin operations, GDPR/history/DLQ functions, and conversational/tool workflows.
+
+The 38-export set is the **candidate canonical pool for v5 reconciliation**, not automatically a verified current deployment. The 35-workflow set remains valuable design/evolution evidence but is no longer described as the uniquely authoritative v5 runtime bundle.
+
+See [the workflow catalog](docs/workflow-catalog.md) for the exact boundary.
+
+## What is implemented or evidenced across the archive
+
+- Gmail and Outlook ingestion patterns
+- Gmail Pub/Sub and Microsoft Graph receiver workflows
+- AI classification, urgency scoring, extraction, and recommended-action logic
+- tenant-aware delivery patterns across WhatsApp, Telegram, Slack, and Discord
+- OAuth callbacks, token refresh, watch/subscription renewal patterns
+- subscription lifecycle, usage metering, billing and reconciliation workflows
+- health monitoring, administrative alerts, backup, purge/history and DLQ operations
+- PostgreSQL state/ownership design
+- onboarding/provisioning and factory-style workflow patterns
+- later conversational-agent/tool workflows for calendar, email search, settings and draft/send actions
+
+Evidence exists at different levels: workflow export, design specification, implementation documentation, audit finding, or historical operating note. A documented control is not automatically a verified runtime control.
+
+## Reliability findings that matter
+
+Historical inspection found state-reference failures where workflow steps could succeed while authoritative account state was written incorrectly, including identifier-name mismatches around credential and workflow references. That class of defect is why MailIQ is currently presented as offline/pre-production rather than as a live SaaS.
+
+A credible relaunch requires controlled verification of:
+
+1. provisioning and authoritative state references;
+2. onboarding and provider subscription lifecycle;
+3. email ingestion, deduplication and tenant isolation;
+4. delivery retry/failure behavior;
+5. billing, usage and reconciliation;
+6. token refresh/renewal behavior;
+7. observability, backup and DLQ recovery;
+8. security and release sanitization.
+
+See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Evidence you can inspect
 
-- [Canonical workflow catalog](docs/workflow-catalog.md) — all 35 workflows, roles, and node counts.
-- [Architecture and state loops](docs/architecture.md) — control plane, runtime, delivery, and feedback paths.
-- [Evidence register](docs/evidence-register.md) — what was found in Drive, what is public here, and what remains private.
-- [Reliability findings](docs/reliability-and-rebuild.md) — verified defects, design decisions, and the next production scope.
-- [Sanitized workflow evidence](workflows/README.md) — representative n8n exports with credentials removed.
-- [Historical architecture image](assets/historical-system-architecture-overview.png) — retained as historical context, not the current source of truth.
+- [Workflow catalog](docs/workflow-catalog.md) — current-vs-historical generation boundary.
+- [Architecture](docs/architecture.md) — control plane, runtime, delivery and feedback loops.
+- [Architecture deep dive](docs/architecture/) — system and workflow architecture notes.
+- [Evidence register](docs/evidence-register.md) — what the archive supports and what remains private.
+- [Database model](docs/database.md) — state and ownership design.
+- [Integrations](docs/integrations.md) — provider/integration boundaries.
+- [Testing](docs/testing.md) — verification requirements and historical evidence boundary.
+- [Security](docs/security.md) and [SECURITY.md](SECURITY.md) — publication and operational security notes.
+- [Representative sanitized workflow](workflows/sanitized/SW-01_Onboarding_Factory_SANITIZED.json).
+- [Historical architecture image](assets/historical-system-architecture-overview.png) — retained as historical context only.
 
-## Engineering decisions
+## Public workflow policy
 
-| Decision | Why it matters |
-|---|---|
-| Shared templates + tenant context | Avoids manually maintaining a completely separate design for every account while preserving tenant ownership. |
-| Database-backed token state | Prevents long-running workflow memory from becoming the authority for OAuth credentials. |
-| Exactly-one-owner constraints | Records that belong to either a client or a team member must never silently belong to both—or neither. |
-| Insert-on-conflict idempotency | Avoids race-prone “check, then insert” behavior for events and queues. |
-| Unified message queue | Reduces the risk of double sending across separate digest and pending-message stores. |
-| Refresh-token rotation | Makes token reuse detectable and provides a clear forced-login response. |
-| Reconciliation as a first-class loop | Treats provider drift, billing drift, and delivery failures as normal operational states. |
-| Deferred queue mode | Keeps pre-revenue infrastructure simpler until load and backlog justify the additional cost. |
+The private archive contains substantially more workflow material than this repository. Public release is intentionally selective.
 
-## What is implemented or evidenced
+Before any workflow is added to a future `workflows/current/` bundle it must pass:
 
-- Gmail and Outlook ingestion workflows
-- Gmail Pub/Sub and Microsoft Graph receiver patterns
-- AI classification, urgency scoring, extraction, and recommended-action logic
-- Tenant-aware template routing across WhatsApp, Telegram, Slack, and Discord
-- OAuth callback, refresh, watch-renewal, and subscription-renewal designs
-- Subscription, usage-metering, and reconciliation workflows
-- Health monitoring, administrative alerting, and backup workflows
-- PostgreSQL schema and ownership constraints
-- Factory-style onboarding and workflow provisioning logic
-
-Evidence exists at different levels: exported workflow, implementation documentation, architecture specification, or operating-history note. A documented control is not automatically a verified runtime control.
-
-## Production boundary
-
-MailIQ was previously trialled and is currently offline. No paying customers, current availability, or production readiness are claimed.
-
-A credible relaunch requires:
-
-1. Repairing and testing provisioning state references.
-2. Running critical onboarding, ingestion, delivery, billing, and failure paths with controlled credentials.
-3. Verifying idempotency, retries, deduplication, circuit breaking, and queue behavior under failure.
-4. Completing metering, reconciliation, observability, and tenant-isolation tests.
-5. Recording sustained operating evidence separately from design evidence.
-
-See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md) for the exact boundary.
+- generation/source identification;
+- secret and identifier sanitization;
+- JSON parse/import validation;
+- state/data-contract review;
+- branch/expression inspection;
+- configured runtime verification for any behavior described as working.
 
 ## Repository map
 
 ```text
 .
-├── assets/                     Official identity + labelled historical diagram
-├── docs/                       Architecture, evidence, security, operations, and decisions
+├── assets/                      Logo + labelled historical visual evidence
+├── docs/                        Architecture, data, testing, security, operations, evidence
 ├── workflows/
-│   ├── sanitized/              Publishable representative workflow
-│   └── historical/             Older import artifact with placeholder configuration
-└── README.md                   Buyer-first technical overview
+│   ├── sanitized/               Publishable representative workflow evidence
+│   └── historical/              Historical import artifact(s)
+├── SECURITY.md
+└── README.md
 ```
-
-The previous one-byte files under `src/` were removed because they implied implementation where there was none. The repository now distinguishes real workflow evidence from documentation and future rebuild work.
-
-## Safe workflow inspection
-
-The public workflow files use placeholders or redacted credential references. Before importing them:
-
-- inspect every node and expression;
-- create fresh credentials in your own n8n instance;
-- replace placeholder URLs, IDs, and channel destinations;
-- keep the workflows inactive until tests pass;
-- use synthetic email and billing data;
-- never commit exported credentials or real customer content.
 
 ## Historical/design stack
 
 n8n · Node.js · PostgreSQL · Redis/Upstash · Gmail API · Microsoft Graph · Google/Microsoft OAuth 2.0 · Paystack · WhatsApp · Telegram · Slack · Discord · OpenAI/Groq integration designs · Railway/Docker deployment documentation.
 
+## Evidence boundary
+
+**Supported:** substantial multi-version email-intelligence architecture/workflow engineering; previously trialled; offline today; real workflow/specification/audit evidence.
+
+**Not supported:** current live SaaS operation, paying customers, verified production uptime, a completely validated v5 bundle, or production-readiness claims.
+
 ---
 
-Built by **Oyekola Ololade** as product systems engineering evidence.  
-For similar workflow architecture, reliability, or integration work, open the portfolio linked from the GitHub profile.
+Built by **Oyekola Ololade** as product-systems engineering evidence.  
+For workflow architecture, reliability, integration, or repair work, use the portfolio linked from the GitHub profile.
