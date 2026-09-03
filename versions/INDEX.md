@@ -2,6 +2,8 @@
 
 This directory documents MailIQ's actual surviving architecture/build lineage. It does not rewrite history into a cleaner sequence than the evidence supports.
 
+[← Main README](../README.md) · [Repository Index](../INDEX.md) · [38-workflow candidate bundle](../workflows/current-candidate/README.md)
+
 ## Interpretation rules
 
 1. **v5.0 is current architecture authority**, not proof of a currently deployed runtime.
@@ -9,19 +11,22 @@ This directory documents MailIQ's actual surviving architecture/build lineage. I
 3. v4.2, v4.3 and the seat-isolation patch are preserved as **referenced-but-not-located** entries; their missing originals are not reconstructed as if recovered.
 4. Workflow counts from different generations are not interchangeable. The historical 35/36-workflow design/build sets and the later 38-export candidate pool represent different artifact generations.
 5. A workflow is only called current/verified after source identification, sanitization, import/topology review and representative execution evidence.
+6. **Every version has an architecture page.** For missing-original versions, that page shows only the evidence-supported architectural envelope/lineage and labels unknown deltas explicitly.
 
 ## Versions
 
-- [v1.0](v1.0/README.md) — baseline product/system architecture.
-- [v1.1](v1.1/README.md) — mostly/all-n8n workflow direction.
-- [v2.2](v2.2/README.md) — explicit two-layer build and 36-workflow definition generation.
-- [v3.0](v3.0/README.md) — Railway/state/OAuth correction.
-- [v3.1](v3.1/README.md) — node-level workflow/backend implementation expansion.
-- [v4.1](v4.1/README.md) — unified/shared-workflow architecture after audit findings.
-- [v4.2](v4.2/README.md) — referenced; standalone original not located.
-- [v4.3](v4.3/README.md) — referenced; standalone original not located.
-- [Seat-isolation patch](seat-isolation-patch/README.md) — referenced patch folded into v5.
-- [v5.0](v5.0/README.md) — current architecture authority and current-candidate workflow reconciliation.
+| Version | Status | README | Architecture diagram |
+|---|---|---|---|
+| v1.0 | Historical baseline | [open](v1.0/README.md) | [diagram](v1.0/ARCHITECTURE.md) |
+| v1.1 | Historical workflow-heavy | [open](v1.1/README.md) | [diagram](v1.1/ARCHITECTURE.md) |
+| v2.2 | Historical two-layer / 36-workflow generation | [open](v2.2/README.md) | [diagram](v2.2/ARCHITECTURE.md) |
+| v3.0 | Historical state/infrastructure correction | [open](v3.0/README.md) | [diagram](v3.0/ARCHITECTURE.md) |
+| v3.1 | Historical node-level build expansion | [open](v3.1/README.md) | [diagram](v3.1/ARCHITECTURE.md) |
+| v4.1 | Historical unified/shared-workflow authority | [open](v4.1/README.md) | [diagram](v4.1/ARCHITECTURE.md) |
+| v4.2 | Referenced; standalone original not located | [open](v4.2/README.md) | [known architecture envelope](v4.2/ARCHITECTURE.md) |
+| v4.3 | Referenced; standalone original not located | [open](v4.3/README.md) | [known architecture envelope](v4.3/ARCHITECTURE.md) |
+| Seat-isolation patch | Referenced patch; standalone original not located | [open](seat-isolation-patch/README.md) | [patch architecture](seat-isolation-patch/ARCHITECTURE.md) |
+| v5.0 | **Current architecture authority** | [open](v5.0/README.md) | [diagram](v5.0/ARCHITECTURE.md) |
 
 ## Cross-version decisions
 
