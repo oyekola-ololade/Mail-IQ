@@ -9,25 +9,25 @@
 <p align="center"><strong>Offline Prototype</strong> · Previously trialled · Multi-version engineering archive · Not a live SaaS</p>
 
 <p align="center">
-  <a href="INDEX.md"><strong>Repository Index</strong></a> ·
-  <a href="versions/INDEX.md"><strong>Version Archive</strong></a> ·
+  <a href="TABLE_OF_CONTENTS.md"><strong>Table of Contents</strong></a> ·
+  <a href="versions/TABLE_OF_CONTENTS.md"><strong>Version Archive</strong></a> ·
   <a href="workflows/current-candidate/README.md"><strong>38-Workflow Candidate Bundle</strong></a> ·
   <a href="docs/MULTI_WORKFLOW_SYSTEM_MAP.md"><strong>System Map</strong></a>
 </p>
 
 ---
 
-## Repository navigation
+## Table of contents / repository navigation
 
-The archive is intentionally browsable from the README. Start with:
+Start with:
 
-- **[INDEX.md](INDEX.md)** — repository-wide navigation and current truth boundary.
-- **[versions/INDEX.md](versions/INDEX.md)** — v1.0 → v5.0 lineage, including missing-original records.
+- **[TABLE_OF_CONTENTS.md](TABLE_OF_CONTENTS.md)** — canonical repository-wide navigation and current truth boundary.
+- **[versions/TABLE_OF_CONTENTS.md](versions/TABLE_OF_CONTENTS.md)** — v1.0 → v5.0 lineage with per-version architecture diagrams.
 - **[workflows/current-candidate/README.md](workflows/current-candidate/README.md)** — sanitized 38-export candidate bundle grouped by subsystem.
 - **[docs/MULTI_WORKFLOW_SYSTEM_MAP.md](docs/MULTI_WORKFLOW_SYSTEM_MAP.md)** — how the cooperating workflow families fit together.
 - **[docs/architecture/](docs/architecture/)** — current architecture deep dives.
 
-Each version folder has its own README and architecture diagram. Where an original source was not recovered, the diagram is explicitly labelled as a reconstructed/known architecture envelope rather than a recovered original.
+Every version/generation has its own README and architecture page. Where an original source was not recovered, the architecture page is explicitly labelled as an evidence-bounded reconstruction/envelope rather than a recovered original. Historical versions still receive architecture diagrams; only current runtime demo/screenshot evidence is restricted to real or placeholder current evidence.
 
 ## Current status
 
@@ -106,6 +106,21 @@ The sanitized public copies belong under [`workflows/current-candidate/`](workfl
 
 See [the workflow catalog](docs/workflow-catalog.md) and [current visual sources](docs/architecture/current-visuals.md).
 
+## Current 38-workflow subsystem structure
+
+```text
+workflows/current-candidate/
+├── 01-onboarding/                 6 workflows
+├── 02-tier-processors/            4 workflows
+├── 03-billing-account-state/      5 workflows
+├── 04-notifications-delivery/     6 workflows
+├── 05-provider-lifecycle/         5 workflows
+├── 06-reliability-compliance/     6 workflows
+└── 07-agent-tools/                6 workflows
+```
+
+These are cooperating workflow families rather than one monolithic automation. Their shared state and calls are documented in the [multi-workflow system map](docs/MULTI_WORKFLOW_SYSTEM_MAP.md).
+
 ## What is implemented or evidenced across the archive
 
 - Gmail and Outlook ingestion patterns
@@ -131,8 +146,8 @@ See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Evidence you can inspect
 
-- [Repository index](INDEX.md)
-- [Version archive](versions/INDEX.md)
+- [Table of Contents](TABLE_OF_CONTENTS.md)
+- [Version archive Table of Contents](versions/TABLE_OF_CONTENTS.md)
 - [Sanitized current-candidate workflow bundle](workflows/current-candidate/README.md)
 - [Workflow catalog](docs/workflow-catalog.md)
 - [Architecture](docs/architecture.md)
@@ -153,10 +168,10 @@ The public candidate bundle may contain sanitized workflow JSON while still rema
 
 ```text
 .
-├── INDEX.md                     Repository-wide navigation
-├── README.md                    Project overview + visible archive links
+├── TABLE_OF_CONTENTS.md          Canonical repository navigation
+├── README.md                    Project overview + visible TOC links
 ├── versions/
-│   ├── INDEX.md                 v1.0 → v5.0 lineage
+│   ├── TABLE_OF_CONTENTS.md     v1.0 → v5.0 lineage
 │   └── <version>/
 │       ├── README.md
 │       └── ARCHITECTURE.md      Version-specific architecture diagram
@@ -170,6 +185,8 @@ The public candidate bundle may contain sanitized workflow JSON while still rema
 ├── SECURITY.md
 └── CHANGELOG.md
 ```
+
+`INDEX.md` and `versions/INDEX.md` remain only as compatibility redirects for old links.
 
 ## Historical/design stack
 
