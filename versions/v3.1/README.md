@@ -1,11 +1,19 @@
 # MailIQ v3.1 — Historical Node-Level Build Expansion
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+
 **Status:** HISTORICAL FALLBACK  
 **Primary surviving authority:** Complete Build Spec v3.1 + backend specification.
 
 ## What this generation adds
 
 v3.1 expands the v3 architecture into detailed node-level workflow and backend build guidance. In the archive it is the preferred historical fallback when a later document references behavior but does not contain the same node-level specificity.
+
+## Architecture
+
+[Open the v3.1 architecture diagram →](ARCHITECTURE.md)
+
+The diagram presents the node-level processing pattern: trigger → validation → authoritative state load → provider operation → processing → persistence → tenant-aware delivery/error path.
 
 ## Architectural relationship
 
@@ -30,4 +38,4 @@ Where v3.1 conflicts with v4.1 or v5.0:
 
 ## Media
 
-Historical version. No demo/screenshot placeholders.
+Historical version. Architecture is documented; demo/screenshot evidence is not fabricated.
