@@ -1,11 +1,19 @@
 # MailIQ v4.1 — Historical Unified Architecture
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+
 **Status:** HISTORICAL — superseded by v5, but important decision authority  
 **Primary surviving authority:** Unified Architecture v4.1
 
 ## Why v4.1 matters
 
 v4.1 responds to a substantial audit cycle and is the generation where MailIQ's tenancy/workflow model changes in a way that strongly influences v5.
+
+## Architecture
+
+[Open the v4.1 architecture diagram →](ARCHITECTURE.md)
+
+The diagram visualizes the key correction: shared n8n workflow definitions operating with tenant-scoped execution/ownership against PostgreSQL-backed authoritative provider state.
 
 ## Major architectural direction
 
@@ -34,4 +42,4 @@ Historical v4.1 workflow exports, if mapped confidently, belong under a historic
 
 ## Media
 
-Historical version. No demo/screenshot placeholders.
+Historical version. Architecture is documented; demo/screenshot evidence is not fabricated.
