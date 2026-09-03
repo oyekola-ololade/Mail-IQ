@@ -1,11 +1,19 @@
 # MailIQ — Seat-Isolation Patch Record
 
+[← Version Index](../INDEX.md) · [Patch Architecture](ARCHITECTURE.md)
+
 **Status:** REFERENCED PATCH / ORIGINAL NOT LOCATED  
 **Relationship:** incorporated into the mature v5 state-isolation direction.
 
 ## Purpose supported by the archive
 
 The patch addressed tenant/seat state isolation. It belongs to the sequence of corrections that made client/account/seat ownership more explicit and reduced the risk of cross-tenant or ambiguous state handling.
+
+## Architecture
+
+[Open the seat-isolation architecture diagram →](ARCHITECTURE.md)
+
+The diagram shows only the supported architectural purpose: owner resolution, tenant/seat-scoped execution context, authoritative state access and same-owner persistence. Exact historical SQL/node changes are not invented.
 
 ## What is not preserved
 
@@ -17,4 +25,4 @@ Use v5.0 as the current authority for tenant/seat state handling. This record ex
 
 ## Media
 
-Historical patch. No demo/screenshot placeholders.
+Architecture is documented. Demo/screenshot runtime evidence is not fabricated.
