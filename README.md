@@ -16,6 +16,8 @@ MailIQ is a substantial historical/pre-production system with multiple surviving
 
 This repository does **not** claim current paying customers, current public availability, production readiness, or a fully verified v5 runtime bundle.
 
+<p align="center"><img src="assets/current-v5-system-boundary.svg" width="100%" alt="MailIQ v5-era system boundary"></p>
+
 ## The problem
 
 Important operational email competes with newsletters, receipts, alerts, and routine conversation inside the same inbox. Teams monitoring multiple Gmail and Outlook accounts repeatedly classify, prioritize, extract, route, and follow up on messages by hand. Urgent work can be missed, while routing knowledge remains trapped in individual inboxes.
@@ -33,14 +35,12 @@ flowchart TB
       Outlook["Outlook + Microsoft Graph"]
       OAuth["OAuth + token lifecycle"]
     end
-
     subgraph Product["Product / control plane"]
       UI["User / admin UI"]
       API["Node.js API"]
       State[("PostgreSQL authoritative state")]
       Billing["Subscription + usage"]
     end
-
     subgraph Runtime["n8n orchestration"]
       Ingest["Event ingestion"]
       Guard["Ownership + dedup guards"]
@@ -48,13 +48,11 @@ flowchart TB
       Route["Tenant-aware routing"]
       Queue["Delivery / retry state"]
     end
-
     subgraph Destinations["Delivery + operations"]
       Channels["WhatsApp · Telegram · Slack · Discord"]
       Observe["Health · alerts · reconciliation · DLQ"]
       Operator["Operator / administrator"]
     end
-
     Gmail --> Ingest
     Outlook --> Ingest
     OAuth <--> API
@@ -75,8 +73,6 @@ The diagram is an architecture model derived from inspected v5-era specification
 
 ## Workflow generations
 
-MailIQ has more than one legitimate workflow generation. That distinction matters.
-
 ### Documented 35-workflow design set
 
 One surviving primary-build generation contains **19 system workflows + 16 tenant delivery templates (35 total)** with a parsed node inventory of 676 nodes.
@@ -87,7 +83,7 @@ A later MailIQ archive contains **38 workflow exports** covering onboarding/plan
 
 The 38-export set is the **candidate canonical pool for v5 reconciliation**, not automatically a verified current deployment. The 35-workflow set remains valuable design/evolution evidence but is no longer described as the uniquely authoritative v5 runtime bundle.
 
-See [the workflow catalog](docs/workflow-catalog.md) for the exact boundary.
+See [the workflow catalog](docs/workflow-catalog.md) and [current visual sources](docs/architecture/current-visuals.md).
 
 ## What is implemented or evidenced across the archive
 
@@ -108,50 +104,32 @@ Evidence exists at different levels: workflow export, design specification, impl
 
 Historical inspection found state-reference failures where workflow steps could succeed while authoritative account state was written incorrectly, including identifier-name mismatches around credential and workflow references. That class of defect is why MailIQ is currently presented as offline/pre-production rather than as a live SaaS.
 
-A credible relaunch requires controlled verification of:
-
-1. provisioning and authoritative state references;
-2. onboarding and provider subscription lifecycle;
-3. email ingestion, deduplication and tenant isolation;
-4. delivery retry/failure behavior;
-5. billing, usage and reconciliation;
-6. token refresh/renewal behavior;
-7. observability, backup and DLQ recovery;
-8. security and release sanitization.
+A credible relaunch requires controlled verification of provisioning/state references, onboarding/provider lifecycle, email ingestion/dedup/tenant isolation, delivery failure behavior, billing/usage/reconciliation, token refresh/renewal, observability/backup/DLQ, and release security/sanitization.
 
 See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Evidence you can inspect
 
-- [Workflow catalog](docs/workflow-catalog.md) — current-vs-historical generation boundary.
-- [Architecture](docs/architecture.md) — control plane, runtime, delivery and feedback loops.
-- [Architecture deep dive](docs/architecture/) — system and workflow architecture notes.
-- [Evidence register](docs/evidence-register.md) — what the archive supports and what remains private.
-- [Database model](docs/database.md) — state and ownership design.
-- [Integrations](docs/integrations.md) — provider/integration boundaries.
-- [Testing](docs/testing.md) — verification requirements and historical evidence boundary.
-- [Security](docs/security.md) and [SECURITY.md](SECURITY.md) — publication and operational security notes.
-- [Representative sanitized workflow](workflows/sanitized/SW-01_Onboarding_Factory_SANITIZED.json).
-- [Historical architecture image](assets/historical-system-architecture-overview.png) — retained as historical context only.
+- [Workflow catalog](docs/workflow-catalog.md)
+- [Architecture](docs/architecture.md)
+- [Architecture deep dive](docs/architecture/)
+- [Evidence register](docs/evidence-register.md)
+- [Database model](docs/database.md)
+- [Integrations](docs/integrations.md)
+- [Testing](docs/testing.md)
+- [Security](docs/security.md) and [SECURITY.md](SECURITY.md)
+- [Representative sanitized workflow](workflows/sanitized/SW-01_Onboarding_Factory_SANITIZED.json)
+- [Historical architecture image](assets/historical-system-architecture-overview.png)
 
 ## Public workflow policy
 
-The private archive contains substantially more workflow material than this repository. Public release is intentionally selective.
-
-Before any workflow is added to a future `workflows/current/` bundle it must pass:
-
-- generation/source identification;
-- secret and identifier sanitization;
-- JSON parse/import validation;
-- state/data-contract review;
-- branch/expression inspection;
-- configured runtime verification for any behavior described as working.
+Before any workflow is added to a future `workflows/current/` bundle it must pass generation/source identification, secret and identifier sanitization, JSON parse/import validation, state/data-contract review, branch/expression inspection, and configured runtime verification for any behavior described as working.
 
 ## Repository map
 
 ```text
 .
-├── assets/                      Logo + labelled historical visual evidence
+├── assets/                      Logo + current/historical labelled visuals
 ├── docs/                        Architecture, data, testing, security, operations, evidence
 ├── workflows/
 │   ├── sanitized/               Publishable representative workflow evidence
