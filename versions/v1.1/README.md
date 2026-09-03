@@ -1,5 +1,7 @@
 # MailIQ v1.1 — Historical Workflow-Heavy Architecture
 
+[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+
 **Status:** HISTORICAL  
 **Primary surviving authority:** Complete Workflow Architecture v1.1  
 **Role in lineage:** materially more n8n-centric than v1.0.
@@ -7,6 +9,12 @@
 ## What changed
 
 v1.1 pushed MailIQ toward a mostly/all-n8n architecture and materially changed the assumptions around how application behavior and workflow orchestration were divided.
+
+## Architecture
+
+[Open the v1.1 architecture diagram →](ARCHITECTURE.md)
+
+The diagram visualizes the workflow-heavy direction recorded for this generation and the concentration of provider/intelligence/delivery behavior around n8n.
 
 ## Architectural direction
 
@@ -32,4 +40,4 @@ Later design work identified the need for:
 
 ## Media
 
-Historical version. No demo/screenshot placeholders are created.
+Historical version. Architecture is documented; demo/screenshot evidence is not fabricated.
