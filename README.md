@@ -8,7 +8,26 @@
 
 <p align="center"><strong>Offline Prototype</strong> · Previously trialled · Multi-version engineering archive · Not a live SaaS</p>
 
+<p align="center">
+  <a href="INDEX.md"><strong>Repository Index</strong></a> ·
+  <a href="versions/INDEX.md"><strong>Version Archive</strong></a> ·
+  <a href="workflows/current-candidate/README.md"><strong>38-Workflow Candidate Bundle</strong></a> ·
+  <a href="docs/MULTI_WORKFLOW_SYSTEM_MAP.md"><strong>System Map</strong></a>
+</p>
+
 ---
+
+## Repository navigation
+
+The archive is intentionally browsable from the README. Start with:
+
+- **[INDEX.md](INDEX.md)** — repository-wide navigation and current truth boundary.
+- **[versions/INDEX.md](versions/INDEX.md)** — v1.0 → v5.0 lineage, including missing-original records.
+- **[workflows/current-candidate/README.md](workflows/current-candidate/README.md)** — sanitized 38-export candidate bundle grouped by subsystem.
+- **[docs/MULTI_WORKFLOW_SYSTEM_MAP.md](docs/MULTI_WORKFLOW_SYSTEM_MAP.md)** — how the cooperating workflow families fit together.
+- **[docs/architecture/](docs/architecture/)** — current architecture deep dives.
+
+Each version folder has its own README and architecture diagram. Where an original source was not recovered, the diagram is explicitly labelled as a reconstructed/known architecture envelope rather than a recovered original.
 
 ## Current status
 
@@ -83,6 +102,8 @@ A later MailIQ archive contains **38 workflow exports** covering onboarding/plan
 
 The 38-export set is the **candidate canonical pool for v5 reconciliation**, not automatically a verified current deployment. The 35-workflow set remains valuable design/evolution evidence but is no longer described as the uniquely authoritative v5 runtime bundle.
 
+The sanitized public copies belong under [`workflows/current-candidate/`](workflows/current-candidate/README.md). Sanitization removes environment-bound credential bindings and private configuration; it does **not** promote a workflow to `CURRENT VERIFIED`.
+
 See [the workflow catalog](docs/workflow-catalog.md) and [current visual sources](docs/architecture/current-visuals.md).
 
 ## What is implemented or evidenced across the archive
@@ -110,6 +131,9 @@ See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Evidence you can inspect
 
+- [Repository index](INDEX.md)
+- [Version archive](versions/INDEX.md)
+- [Sanitized current-candidate workflow bundle](workflows/current-candidate/README.md)
 - [Workflow catalog](docs/workflow-catalog.md)
 - [Architecture](docs/architecture.md)
 - [Architecture deep dive](docs/architecture/)
@@ -123,19 +147,28 @@ See [Reliability findings and rebuild plan](docs/reliability-and-rebuild.md).
 
 ## Public workflow policy
 
-Before any workflow is added to a future `workflows/current/` bundle it must pass generation/source identification, secret and identifier sanitization, JSON parse/import validation, state/data-contract review, branch/expression inspection, and configured runtime verification for any behavior described as working.
+The public candidate bundle may contain sanitized workflow JSON while still remaining unverified. A workflow is only promoted from candidate evidence to `CURRENT VERIFIED` after generation/source identification, secret and identifier sanitization, JSON parse/import validation, state/data-contract review, branch/expression inspection, and configured runtime verification for any behavior described as working.
 
 ## Repository map
 
 ```text
 .
+├── INDEX.md                     Repository-wide navigation
+├── README.md                    Project overview + visible archive links
+├── versions/
+│   ├── INDEX.md                 v1.0 → v5.0 lineage
+│   └── <version>/
+│       ├── README.md
+│       └── ARCHITECTURE.md      Version-specific architecture diagram
 ├── assets/                      Logo + current/historical labelled visuals
 ├── docs/                        Architecture, data, testing, security, operations, evidence
 ├── workflows/
-│   ├── sanitized/               Publishable representative workflow evidence
+│   ├── current-candidate/       Sanitized 38-export candidate pool by subsystem
+│   ├── sanitized/               Representative publishable workflow evidence
 │   └── historical/              Historical import artifact(s)
+├── evidence/current/            Current-only demo/screenshot evidence locations
 ├── SECURITY.md
-└── README.md
+└── CHANGELOG.md
 ```
 
 ## Historical/design stack
