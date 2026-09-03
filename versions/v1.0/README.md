@@ -1,6 +1,6 @@
 # MailIQ v1.0 — Historical Baseline Architecture
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL  
 **Primary surviving authority:** Architecture Specification v1.0  
