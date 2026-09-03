@@ -1,6 +1,6 @@
 # MailIQ v1.1 — Historical Workflow-Heavy Architecture
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL  
 **Primary surviving authority:** Complete Workflow Architecture v1.1  
