@@ -1,6 +1,6 @@
 # MailIQ v3.1 — Historical Node-Level Build Expansion
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md)
 
 **Status:** HISTORICAL FALLBACK  
 **Primary surviving authority:** Complete Build Spec v3.1 + backend specification.
