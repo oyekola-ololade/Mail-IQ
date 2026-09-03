@@ -1,6 +1,6 @@
 # MailIQ v5.0 — Current Architecture Authority
 
-[← Version Index](../INDEX.md) · [Architecture Diagram](ARCHITECTURE.md) · [38-Workflow Candidate Bundle](../../workflows/current-candidate/README.md)
+[← Version Table of Contents](../TABLE_OF_CONTENTS.md) · [Architecture Diagram](ARCHITECTURE.md) · [38-Workflow Candidate Bundle](../../workflows/current-candidate/README.md)
 
 **Status:** CURRENT ARCHITECTURE AUTHORITY · runtime bundle still under reconciliation / revalidation
 
